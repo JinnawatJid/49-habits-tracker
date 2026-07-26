@@ -1,17 +1,18 @@
 # Project Context: 49 Habits Tracker
 
 ## Overview
-A gamified 21-Day Habit Challenge web app based on the book *49 habits นิสัยง่ายๆ ชีวิตโคตรดี*. Users progress through 49 sequential levels (Level 1 → Level 2 → Level 49), requiring 21 days of daily check-ins per level before unlocking the next chapter.
+A gamified 21-Day Habit Challenge web application based on the book *49 habits นิสัยง่ายๆ ชีวิตโคตรดี*. Users progress through 49 sequential levels (Level 1 → Level 2 → Level 49), requiring 21 days of daily check-ins per level before unlocking the next chapter.
 
 ---
 
 ## 🏛️ Core Architecture & Tech Stack
 - **Framework**: React 19 + Vite 8
-- **Design System**: Balanced Middle-Ground Light Mode (Off-white `#F8FAFC`, Crisp white cards `#FFFFFF`, Emerald accents `#10B981`, Amber trophies `#F59E0B`).
+- **Design System**: Dual-Theme Support (Balanced Light Mode `#F8FAFC` & Sleek Dark Slate Mode `#0F172A` with Emerald `#10B981` accents).
 - **Real Calendar Date Engine**: Behind-the-scenes ISO date engine (`YYYY-MM-DD`) with clean human header date formatting (`Sunday, July 26`).
 - **Database & Sync Engine**: Supabase Real-Time PostgreSQL (`user_habits` table) with Single-Field Private Sync Key authentication (`Jinna-2026`).
 - **Native PWA**: Offline Service Worker (`sw.js`) + Web App Manifest (`manifest.json`).
 - **GitHub Repository**: [github.com/JinnawatJid/49-habits-tracker](https://github.com/JinnawatJid/49-habits-tracker) (Personal Profile: `JinnawatJid`).
+- **Cloud Hosting**: Live Continuous Deployment on Vercel.
 
 ---
 

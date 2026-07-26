@@ -1,18 +1,29 @@
 # Design System & Learned Rules (49 Habits Tracker)
 
-## 1. UI & Visual Design Invariants
-* **Visual Palette & Tokens**:
-  * Off-white background: `#F8FAFC`
-  * Clean white cards: `#FFFFFF` with rounded borders `#E2E8F0`
-  * Action Accents: Emerald Green `#10B981` (Hover: `#059669`)
-  * Mastered Trophy Accent: Warm Amber `#F59E0B`
-* **Layout Structure**:
-  * **Strictly 2 Bottom Tabs**: `Today` and `Journey` matching [`stitch_21day_balanced_middleground.jpg`](file:///C:/Users/Jinna/Desktop/49-habits-tracker/stitch_21day_balanced_middleground.jpg).
-  * **Header**: Clean date text (`Sunday, July 26`) + Mastered count badge (`0/49 Mastered`).
+## 1. Visual Design Tokens & Themes
+
+### Light Theme (Balanced Middle-Ground)
+* **App Background**: Soft Off-White (`#F8FAFC`)
+* **Card Surface**: Pure White (`#FFFFFF`)
+* **Card Border**: Slate Border (`#E2E8F0`)
+* **Text Primary**: Slate Charcoal (`#0F172A`)
+* **Text Secondary**: Slate Muted (`#475569`)
+
+### Dark Theme (Sleek Dark Slate) — Approved
+* **App Background**: Dark Slate (`#0F172A`)
+* **Card Surface**: Dark Slate Card (`#1E293B`)
+* **Card Border**: Dark Border (`#334155`)
+* **Text Primary**: Crisp Off-White (`#F8FAFC`)
+* **Text Secondary**: Light Slate (`#94a3b8`)
+
+### Universal Accents
+* **Action Accent**: Emerald Green (`#10B981`, Hover: `#059669`)
+* **Trophy Accent**: Warm Amber (`#F59E0B`)
+* **Layout Structure**: Strictly 2 Bottom Tabs (`Today` and `Journey`) matching [`stitch_21day_balanced_middleground.jpg`](file:///C:/Users/Jinna/Desktop/49-habits-tracker/stitch_21day_balanced_middleground.jpg) and [`stitch_21day_dark_mode.jpg`](file:///C:/Users/Jinna/Desktop/49-habits-tracker/stitch_21day_dark_mode.jpg).
 
 ---
 
-## 2. Mandatory Behavioral & Workflow Rules
+## 2. Mandatory Learned Behavioral Rules
 
 ### Rule 1: Visual Wireframe Approval First
 * **NEVER add or alter UI elements, buttons, or navigation layouts** without first generating a visual wireframe mockup (via Stitch / `generate_image`), presenting it to the user, and receiving explicit approval.
@@ -22,15 +33,17 @@
 
 ### Rule 3: Real-Time Sync Race-Condition Safeguards
 * **Mount Overwrite Prevention**: Always block cloud push operations on app mount until initial cloud state fetch completes (`isInitializedRef`).
-* **Echo Loop Prevention**: Always implement remote-update flags (`isRemoteUpdateRef`) and deep state comparison to prevent incoming real-time broadcasts from re-triggering outgoing pushes in an infinite loop.
+* **Echo Loop Prevention**: Always implement remote-update flags (`isRemoteUpdateRef`) and deep state comparison (`lastStateStrRef`) to prevent incoming real-time broadcasts from re-triggering outgoing pushes in an infinite loop.
 
-### Rule 4: Pre-Submission Code Review
+### Rule 4: Mandatory Pre-Submission Code Review
 * **NEVER claim a feature or fix is working** without performing a comprehensive code review audit or invoking a subagent to test edge cases across multi-device/multi-tab scenarios.
 
 ---
 
-## 3. Tech Stack Architecture
+## 3. Technology Architecture
 * **Frontend**: React 19 + Vite 8
-* **Database**: Supabase Real-Time Key-Value Store (`user_habits` table)
-* **PWA**: Offline Service Worker (`sw.js`) + Manifest (`manifest.json`)
-* **Repo**: `https://github.com/JinnawatJid/49-habits-tracker`
+* **Database & Realtime**: Supabase Real-Time Key-Value Store (`user_habits` table) with Single-Field Private Sync Key authentication (`Jinna-2026`).
+* **Themes**: Dynamic Light / Dark mode toggle with persistent `data-theme` attribute and Supabase sync.
+* **PWA**: Offline Service Worker (`sw.js`) + Manifest (`manifest.json`).
+* **GitHub Repository**: [github.com/JinnawatJid/49-habits-tracker](https://github.com/JinnawatJid/49-habits-tracker) (Personal Profile: `JinnawatJid`).
+* **Cloud Hosting**: Live Continuous Deployment on Vercel.
