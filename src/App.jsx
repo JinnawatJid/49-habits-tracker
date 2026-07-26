@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Check, Plus, Award, Compass, Trash2, CheckCircle2, 
   Sparkles, Calendar, Flame, RefreshCw, Link2, Database
@@ -29,42 +29,7 @@ const getOrGenerateSyncCode = () => {
   return newCode;
 };
 
-// Initial Active Habit
-const getInitialActiveHabit = () => {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 13);
-  const startStr = startDate.toISOString().split('T')[0];
-
-  const pastCheckIns = [];
-  for (let i = 13; i >= 1; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    pastCheckIns.push(d.toISOString().split('T')[0]);
-  }
-
-  return {
-    id: 'h-real-1',
-    title: 'Read 10 Pages Daily',
-    categoryTag: 'Book Club',
-    tagColor: 'tag-green',
-    startDate: startStr,
-    checkInDates: pastCheckIns,
-    targetDays: 21
-  };
-};
-
-const INITIAL_MASTERED = [
-  { id: 'm-1', title: 'Drink 1L Water Daily', completedDate: 'Completed 21/21 Days', tag: 'Self Care', tagColor: 'tag-pink' },
-  { id: 'm-2', title: '10-Min Morning Meditation', completedDate: 'Completed 21/21 Days', tag: 'Mindfulness', tagColor: 'tag-yellow' },
-  { id: 'm-3', title: 'Plan Today in Writing', completedDate: 'Completed 21/21 Days', tag: 'Chapter 1', tagColor: 'tag-blue' }
-];
-
-const INITIAL_TODOS = [
-  { id: 't-1', text: 'Read 10 Pages Daily', tag: 'Book Club', tagColor: 'tag-green', completed: false },
-  { id: 't-2', text: 'Drink 1L Water First Thing', tag: 'Self Care', tagColor: 'tag-pink', completed: true },
-  { id: 't-3', text: 'Book Club monthly review', tag: 'Mindfulness', tagColor: 'tag-yellow', completed: false }
-];
-
+// Curated 21-Day Habit Library inspired by 49 Habits
 const HABIT_LIBRARY = [
   { title: 'Read 10 Pages Daily', tag: 'Book Club', tagColor: 'tag-green', desc: 'Continuous daily reading to build knowledge.' },
   { title: 'Drink 1L Water Daily', tag: 'Self Care', tagColor: 'tag-pink', desc: 'Hydrate your body first thing upon waking.' },
@@ -80,20 +45,20 @@ export default function App() {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [inputSyncCode, setInputSyncCode] = useState('');
 
-  // LocalStorage State
+  // Clean Production State (No pre-loaded mock data!)
   const [activeHabit, setActiveHabit] = useState(() => {
-    const saved = localStorage.getItem('49habits_v3_active');
-    return saved ? JSON.parse(saved) : getInitialActiveHabit();
+    const saved = localStorage.getItem('49habits_v4_active');
+    return saved ? JSON.parse(saved) : null; // Starts clean!
   });
 
   const [masteredHabits, setMasteredHabits] = useState(() => {
-    const saved = localStorage.getItem('49habits_v3_mastered');
-    return saved ? JSON.parse(saved) : INITIAL_MASTERED;
+    const saved = localStorage.getItem('49habits_v4_mastered');
+    return saved ? JSON.parse(saved) : []; // Starts clean!
   });
 
   const [todos, setTodos] = useState(() => {
-    const saved = localStorage.getItem('49habits_v3_todos');
-    return saved ? JSON.parse(saved) : INITIAL_TODOS;
+    const saved = localStorage.getItem('49habits_v4_todos');
+    return saved ? JSON.parse(saved) : []; // Starts clean!
   });
 
   const [newTodoText, setNewTodoText] = useState('');
@@ -101,11 +66,10 @@ export default function App() {
 
   // LocalStorage & Supabase Sync
   useEffect(() => {
-    localStorage.setItem('49habits_v3_active', JSON.stringify(activeHabit));
-    localStorage.setItem('49habits_v3_mastered', JSON.stringify(masteredHabits));
-    localStorage.setItem('49habits_v3_todos', JSON.stringify(todos));
+    localStorage.setItem('49habits_v4_active', JSON.stringify(activeHabit));
+    localStorage.setItem('49habits_v4_mastered', JSON.stringify(masteredHabits));
+    localStorage.setItem('49habits_v4_todos', JSON.stringify(todos));
 
-    // Push state update to Supabase Cloud
     pushSupabaseData(syncCode, { activeHabit, masteredHabits, todos });
   }, [activeHabit, masteredHabits, todos, syncCode]);
 
@@ -129,7 +93,6 @@ export default function App() {
     localStorage.setItem('49habits_sync_code', formattedCode);
     setSyncCode(formattedCode);
 
-    // Fetch initial Supabase data for the paired code
     fetchSupabaseData(formattedCode).then(cloudData => {
       if (cloudData) {
         if (cloudData.active_habit !== undefined) setActiveHabit(cloudData.active_habit);
@@ -140,7 +103,7 @@ export default function App() {
 
     setShowSyncModal(false);
     setInputSyncCode('');
-    alert(`Device paired to Supabase Sync Code: ${formattedCode}! All progress will now sync in real time.`);
+    alert(`Device paired to Supabase Sync Code: ${formattedCode}! Progress will sync in real time.`);
   };
 
   // Calculations
@@ -148,7 +111,7 @@ export default function App() {
   const completedCount = activeHabit ? activeHabit.checkInDates.length : 0;
   const currentDayNum = isCheckedToday ? completedCount : completedCount + 1;
 
-  // Handle Check-In
+  // Handle Today's Check-In
   const handleCheckInToday = () => {
     if (!activeHabit) return;
 
@@ -249,19 +212,9 @@ export default function App() {
     setActiveTab('today');
   };
 
-  // Clean Reset Option
-  const handleCleanReset = () => {
-    if (window.confirm('Clear sample data and start fresh?')) {
-      setActiveHabit(null);
-      setTodos([]);
-      localStorage.removeItem('49habits_v3_active');
-      localStorage.removeItem('49habits_v3_todos');
-    }
-  };
-
   return (
     <div className="mobile-app-shell">
-      {/* Top Header with Supabase Sync Code */}
+      {/* Polished Top Header */}
       <header className="app-header">
         <div>
           <h1 className="header-date">{getPolishedHeaderDate()}</h1>
@@ -322,14 +275,15 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <div className="hero-challenge-card animate-pop" style={{ textAlign: 'center', padding: '32px 20px' }}>
-                <Award size={36} color="#10b981" style={{ marginBottom: '8px' }} />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>No Active 21-Day Challenge</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '6px 0 16px' }}>
-                  Pick a single habit challenge from your library to start your 21-day journey!
+              /* Clean Onboarding State */
+              <div className="hero-challenge-card animate-pop" style={{ textAlign: 'center', padding: '36px 20px' }}>
+                <Award size={40} color="#10b981" style={{ marginBottom: '12px' }} />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Start Your 21-Day Journey</h3>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: '8px 0 20px', lineHeight: 1.5 }}>
+                  Choose <strong>1 single habit</strong> to transform your life over the next 21 days!
                 </p>
                 <button className="btn-emerald-solid" onClick={() => setActiveTab('journey')}>
-                  <Compass size={18} /> Browse Habit Library
+                  <Compass size={18} /> Select Your First Habit Challenge
                 </button>
               </div>
             )}
@@ -353,8 +307,8 @@ export default function App() {
 
               <div>
                 {todos.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-                    No items in your checklist for today!
+                  <div style={{ textAlign: 'center', padding: '28px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                    Your checklist is empty for today. Add a task above to get started!
                   </div>
                 ) : (
                   todos.map(item => (
@@ -401,7 +355,7 @@ export default function App() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {masteredHabits.length === 0 ? (
-                  <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+                  <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
                     Complete your first 21-day challenge to unlock your first trophy here!
                   </div>
                 ) : (
@@ -467,15 +421,6 @@ export default function App() {
                       Start
                     </button>
                   </div>
-                </div>
-
-                <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                  <button 
-                    onClick={handleCleanReset}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    <RefreshCw size={12} /> Clear Sample Data & Start Fresh
-                  </button>
                 </div>
               </div>
             </div>
