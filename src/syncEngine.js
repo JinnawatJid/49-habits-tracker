@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 
 // Fetch latest habit data for a Sync Code from Supabase
 export const fetchSupabaseData = async (syncCode) => {
+  if (!syncCode) return null;
   try {
     const { data, error } = await supabase
       .from('user_habits')
@@ -10,11 +11,20 @@ export const fetchSupabaseData = async (syncCode) => {
       .eq('sync_code', syncCode)
       .single();
 
-    if (error) {
-      console.log('Supabase fetch notice:', error.message);
+    if (error || !data) {
+      console.log('Supabase fetch notice:', error?.message);
       return null;
     }
-    return data;
+
+    // Unpack 49 Sequential Levels payload
+    if (data.active_habit) {
+      return {
+        currentLevel: data.active_habit.currentLevel || 1,
+        activeCheckIns: Array.isArray(data.active_habit.activeCheckIns) ? data.active_habit.activeCheckIns : [],
+        masteredLevels: Array.isArray(data.active_habit.masteredLevels) ? data.active_habit.masteredLevels : []
+      };
+    }
+    return null;
   } catch (e) {
     console.log('Supabase fetch exception:', e);
     return null;
@@ -23,14 +33,17 @@ export const fetchSupabaseData = async (syncCode) => {
 
 // Push / Upsert habit data to Supabase by Sync Code
 export const pushSupabaseData = async (syncCode, payload) => {
+  if (!syncCode) return;
   try {
     const { error } = await supabase
       .from('user_habits')
       .upsert({
         sync_code: syncCode,
-        active_habit: payload.activeHabit,
-        mastered_habits: payload.masteredHabits,
-        todos: payload.todos,
+        active_habit: {
+          currentLevel: payload.currentLevel,
+          activeCheckIns: payload.activeCheckIns,
+          masteredLevels: payload.masteredLevels
+        },
         updated_at: new Date().toISOString()
       }, { onConflict: 'sync_code' });
 
@@ -44,6 +57,8 @@ export const pushSupabaseData = async (syncCode, payload) => {
 
 // Subscribe to Real-Time Supabase Changes for a Sync Code
 export const subscribeSupabaseRealtime = (syncCode, onUpdate) => {
+  if (!syncCode) return () => {};
+
   const channel = supabase
     .channel(`realtime:user_habits:${syncCode}`)
     .on(
@@ -55,8 +70,12 @@ export const subscribeSupabaseRealtime = (syncCode, onUpdate) => {
         filter: `sync_code=eq.${syncCode}`
       },
       (payload) => {
-        if (payload.new) {
-          onUpdate(payload.new);
+        if (payload.new && payload.new.active_habit) {
+          onUpdate({
+            currentLevel: payload.new.active_habit.currentLevel || 1,
+            activeCheckIns: Array.isArray(payload.new.active_habit.activeCheckIns) ? payload.new.active_habit.activeCheckIns : [],
+            masteredLevels: Array.isArray(payload.new.active_habit.masteredLevels) ? payload.new.active_habit.masteredLevels : []
+          });
         }
       }
     )
