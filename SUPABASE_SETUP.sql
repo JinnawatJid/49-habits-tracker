@@ -23,5 +23,15 @@ CREATE POLICY "Allow public insert/update on user_habits"
   USING (true) 
   WITH CHECK (true);
 
--- Enable Real-Time Listener on user_habits table
-ALTER PUBLICATION supabase_realtime ADD TABLE public.user_habits;
+-- Safely add to Real-Time publication without duplicate errors
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND schemaname = 'public' 
+    AND tablename = 'user_habits'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.user_habits;
+  END IF;
+END $$;
