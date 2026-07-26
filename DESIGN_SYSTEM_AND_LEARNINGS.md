@@ -1,72 +1,36 @@
-# Design System & Agent Learnings Document
+# Design System & Learned Rules (49 Habits Tracker)
 
-## 🎨 Approved Design Asset
-* **Approved Visual Mockup**: [stitch_21day_balanced_middleground.jpg](file:///C:/Users/Jinna/Desktop/49-habits-tracker/stitch_21day_balanced_middleground.jpg)
-* **Design Philosophy**: **Balanced Middle-Ground** — Clean, structured, mobile-first, soft card containers, elegant spacing, zero dark mode bloat, zero plain stark emptiness.
-
----
-
-## 🛑 Agent Learnings & Rules (DO NOT REPEAT PAST MISTAKES!)
-
-### 1. ALWAYS Get Visual Wireframe Approval BEFORE Writing Code
-* **Lesson Learned**: The agent initially jumped into writing React/Vite code without letting the user review and approve the visual layout first.
-* **Mandatory Workflow Rule**:
-  1. Ask open-ended questions about the user's workflow, aesthetics, and mobile screen expectations.
-  2. Have **Stitch** generate visual mockups (9:16 mobile aspect ratio).
-  3. Save mockup images to the project directory and present them to the user.
-  4. **ONLY after explicit user approval** (`"I like this one, so we will base on this"`) start scaffolding and writing code.
-
-### 2. Finding the Design Sweet Spot (Balanced Middle-Ground)
-* **Avoid Extreme 1 (Over-engineered / Bloated)**: Heavy dark glassmorphism, glowing neon borders, complex 4-quadrant matrices, busy timers, and heavy shadows.
-* **Avoid Extreme 2 (Under-engineered / Bare)**: Stark flat plain text with zero card containers or visual structure.
-* **The Approved Sweet Spot**:
-  - Soft white card panels (`#FFFFFF`) with thin, rounded border outlines (`#E2E8F0`).
-  - Off-white backdrop (`#F8FAFC`).
-  - Single vibrant growth accent color (**Emerald Green `#10B981`**).
-  - Subtle pastel category tag pills (*Book Club*, *Self Care*, *Mindfulness*).
-  - Clean, high-contrast typography (Plus Jakarta Sans / Inter).
+## 1. UI & Visual Design Invariants
+* **Visual Palette & Tokens**:
+  * Off-white background: `#F8FAFC`
+  * Clean white cards: `#FFFFFF` with rounded borders `#E2E8F0`
+  * Action Accents: Emerald Green `#10B981` (Hover: `#059669`)
+  * Mastered Trophy Accent: Warm Amber `#F59E0B`
+* **Layout Structure**:
+  * **Strictly 2 Bottom Tabs**: `Today` and `Journey` matching [`stitch_21day_balanced_middleground.jpg`](file:///C:/Users/Jinna/Desktop/49-habits-tracker/stitch_21day_balanced_middleground.jpg).
+  * **Header**: Clean date text (`Sunday, July 26`) + Mastered count badge (`0/49 Mastered`).
 
 ---
 
-## 📐 Design Tokens & CSS Specs
+## 2. Mandatory Behavioral & Workflow Rules
 
-```css
-:root {
-  --bg-app: #f8fafc;
-  --surface-card: #ffffff;
-  --border-card: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  
-  --accent-emerald: #10b981;
-  --accent-emerald-bg: #ecfdf5;
-  --accent-emerald-border: #a7f3d0;
-  
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-full: 9999px;
+### Rule 1: Visual Wireframe Approval First
+* **NEVER add or alter UI elements, buttons, or navigation layouts** without first generating a visual wireframe mockup (via Stitch / `generate_image`), presenting it to the user, and receiving explicit approval.
 
-  --shadow-soft: 0 4px 14px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-}
-```
+### Rule 2: Production Polish & Zero Mock Data Policy
+* **Never display developer debug text** (e.g. `"Real Calendar Date • 2026-07-26"`, `"Supabase Sync: HABIT-XXXX"`) or pre-populated dummy lists cluttering the interface. Keep all UI clean and production-ready.
 
-### Pastel Tag Classes
-* `.tag-green`: `background: #e6f4ea; color: #137333;`
-* `.tag-pink`: `background: #fce8e6; color: #c5221f;`
-* `.tag-yellow`: `background: #feefc3; color: #b06000;`
-* `.tag-blue`: `background: #e8f0fe; color: #1a73e8;`
-* `.tag-purple`: `background: #f3e8ff; color: #7e22ce;`
+### Rule 3: Real-Time Sync Race-Condition Safeguards
+* **Mount Overwrite Prevention**: Always block cloud push operations on app mount until initial cloud state fetch completes (`isInitializedRef`).
+* **Echo Loop Prevention**: Always implement remote-update flags (`isRemoteUpdateRef`) and deep state comparison to prevent incoming real-time broadcasts from re-triggering outgoing pushes in an infinite loop.
+
+### Rule 4: Pre-Submission Code Review
+* **NEVER claim a feature or fix is working** without performing a comprehensive code review audit or invoking a subagent to test edge cases across multi-device/multi-tab scenarios.
 
 ---
 
-## 📱 Mobile Component Breakdown
-1. **Header Bar**: Date title (`Tuesday, Oct 26`) + Mastered Habits count pill (`3 Habits Mastered`).
-2. **Hero 21-Day Challenge Card**:
-   - Title: *"Read 10 Pages Daily"*
-   - Status pill: *"Day 14 of 21"*
-   - 21-Circle Matrix Grid: 3 rows of 7 dots (completed emerald dots, active today border dot, grey upcoming dots).
-   - Check-in button: Solid emerald green with confetti FX.
-3. **Today's Checklist**: Clean rounded card rows with checkboxes and pastel category tags.
-4. **Bottom Nav Bar**: Clean 2-item navigation bar (`Today` | `Journey`).
+## 3. Tech Stack Architecture
+* **Frontend**: React 19 + Vite 8
+* **Database**: Supabase Real-Time Key-Value Store (`user_habits` table)
+* **PWA**: Offline Service Worker (`sw.js`) + Manifest (`manifest.json`)
+* **Repo**: `https://github.com/JinnawatJid/49-habits-tracker`
