@@ -1,4 +1,4 @@
--- Supabase SQL Schema for 21-Day Habit Challenge Multi-Device Sync
+-- Supabase SQL Schema for 21-Day Habit Challenge Multi-Device Sync (Idempotent)
 
 CREATE TABLE IF NOT EXISTS public.user_habits (
   sync_code TEXT PRIMARY KEY,
@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS public.user_habits (
 
 -- Enable Row Level Security (RLS) & Public Access for Sync Code Pairing
 ALTER TABLE public.user_habits ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public select on user_habits" ON public.user_habits;
+DROP POLICY IF EXISTS "Allow public insert/update on user_habits" ON public.user_habits;
 
 CREATE POLICY "Allow public select on user_habits" 
   ON public.user_habits FOR SELECT 
