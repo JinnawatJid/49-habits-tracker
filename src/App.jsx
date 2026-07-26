@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Check, Plus, Award, Compass, Trash2, CheckCircle2, 
-  Sparkles, Calendar, Flame, RefreshCw, AlertCircle
+  Sparkles, Calendar, Flame, RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import './App.css';
 
-// Helper functions for Real Calendar Date Engine
-const getTodayString = () => {
+// Helper functions for Real Calendar Date Engine (Behind the Scenes)
+const getTodayISO = () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -15,18 +15,17 @@ const getTodayString = () => {
   return `${year}-${month}-${day}`;
 };
 
-const getHeaderDateString = () => {
-  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+// Clean Human-Readable Date Format (e.g. "Sunday, July 26")
+const getPolishedHeaderDate = () => {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 };
 
-// Initial Production Starter Active Habit (Real Calendar Dates)
+// Initial Production Starter Active Habit
 const getInitialActiveHabit = () => {
-  const today = getTodayString();
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 13); // Started 13 days ago
+  startDate.setDate(startDate.getDate() - 13);
   const startStr = startDate.toISOString().split('T')[0];
 
-  // Generate 13 past check-in date strings up to yesterday
   const pastCheckIns = [];
   for (let i = 13; i >= 1; i--) {
     const d = new Date();
@@ -40,21 +39,21 @@ const getInitialActiveHabit = () => {
     categoryTag: 'Book Club',
     tagColor: 'tag-green',
     startDate: startStr,
-    checkInDates: pastCheckIns, // 13 check-ins done, today is day 14!
+    checkInDates: pastCheckIns,
     targetDays: 21
   };
 };
 
 const INITIAL_MASTERED = [
-  { id: 'm-1', title: 'Drink 1L Water Daily', completedDate: '2026-07-10 (21/21 Days)', tag: 'Self Care', tagColor: 'tag-pink' },
-  { id: 'm-2', title: '10-Min Morning Meditation', completedDate: '2026-06-15 (21/21 Days)', tag: 'Mindfulness', tagColor: 'tag-yellow' },
-  { id: 'm-3', title: 'Plan Today in Writing', completedDate: '2026-05-20 (21/21 Days)', tag: 'Chapter 1', tagColor: 'tag-blue' }
+  { id: 'm-1', title: 'Drink 1L Water Daily', completedDate: 'Completed 21/21 Days', tag: 'Self Care', tagColor: 'tag-pink' },
+  { id: 'm-2', title: '10-Min Morning Meditation', completedDate: 'Completed 21/21 Days', tag: 'Mindfulness', tagColor: 'tag-yellow' },
+  { id: 'm-3', title: 'Plan Today in Writing', completedDate: 'Completed 21/21 Days', tag: 'Chapter 1', tagColor: 'tag-blue' }
 ];
 
 const INITIAL_TODOS = [
-  { id: 't-1', text: 'Read 10 Pages Daily', tag: 'Book Club', tagColor: 'tag-green', completed: false, date: getTodayString() },
-  { id: 't-2', text: 'Drink 1L Water First Thing', tag: 'Self Care', tagColor: 'tag-pink', completed: true, date: getTodayString() },
-  { id: 't-3', text: 'Book Club monthly review', tag: 'Mindfulness', tagColor: 'tag-yellow', completed: false, date: getTodayString() }
+  { id: 't-1', text: 'Read 10 Pages Daily', tag: 'Book Club', tagColor: 'tag-green', completed: false },
+  { id: 't-2', text: 'Drink 1L Water First Thing', tag: 'Self Care', tagColor: 'tag-pink', completed: true },
+  { id: 't-3', text: 'Book Club monthly review', tag: 'Mindfulness', tagColor: 'tag-yellow', completed: false }
 ];
 
 const HABIT_LIBRARY = [
@@ -67,32 +66,32 @@ const HABIT_LIBRARY = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('today');
-  const [todayStr, setTodayStr] = useState(getTodayString());
+  const [todayISO, setTodayISO] = useState(getTodayISO());
 
-  // Check if date changed (midnight reset check)
+  // Check if date changed (midnight reset)
   useEffect(() => {
     const timer = setInterval(() => {
-      const current = getTodayString();
-      if (current !== todayStr) {
-        setTodayStr(current);
+      const current = getTodayISO();
+      if (current !== todayISO) {
+        setTodayISO(current);
       }
-    }, 60000); // Check every minute
+    }, 60000);
     return () => clearInterval(timer);
-  }, [todayStr]);
+  }, [todayISO]);
 
   // LocalStorage State
   const [activeHabit, setActiveHabit] = useState(() => {
-    const saved = localStorage.getItem('49habits_v2_active');
+    const saved = localStorage.getItem('49habits_v3_active');
     return saved ? JSON.parse(saved) : getInitialActiveHabit();
   });
 
   const [masteredHabits, setMasteredHabits] = useState(() => {
-    const saved = localStorage.getItem('49habits_v2_mastered');
+    const saved = localStorage.getItem('49habits_v3_mastered');
     return saved ? JSON.parse(saved) : INITIAL_MASTERED;
   });
 
   const [todos, setTodos] = useState(() => {
-    const saved = localStorage.getItem('49habits_v2_todos');
+    const saved = localStorage.getItem('49habits_v3_todos');
     return saved ? JSON.parse(saved) : INITIAL_TODOS;
   });
 
@@ -101,35 +100,33 @@ export default function App() {
 
   // LocalStorage Persistence
   useEffect(() => {
-    localStorage.setItem('49habits_v2_active', JSON.stringify(activeHabit));
+    localStorage.setItem('49habits_v3_active', JSON.stringify(activeHabit));
   }, [activeHabit]);
 
   useEffect(() => {
-    localStorage.setItem('49habits_v2_mastered', JSON.stringify(masteredHabits));
+    localStorage.setItem('49habits_v3_mastered', JSON.stringify(masteredHabits));
   }, [masteredHabits]);
 
   useEffect(() => {
-    localStorage.setItem('49habits_v2_todos', JSON.stringify(todos));
+    localStorage.setItem('49habits_v3_todos', JSON.stringify(todos));
   }, [todos]);
 
-  // Real Calendar Engine Calculations
-  const isCheckedToday = activeHabit ? activeHabit.checkInDates.includes(todayStr) : false;
+  // Calculations
+  const isCheckedToday = activeHabit ? activeHabit.checkInDates.includes(todayISO) : false;
   const completedCount = activeHabit ? activeHabit.checkInDates.length : 0;
   const currentDayNum = isCheckedToday ? completedCount : completedCount + 1;
 
-  // Handle Today's Check-In
+  // Handle Check-In
   const handleCheckInToday = () => {
     if (!activeHabit) return;
 
     if (isCheckedToday) {
-      // Toggle OFF today's check-in
       setActiveHabit(prev => ({
         ...prev,
-        checkInDates: prev.checkInDates.filter(d => d !== todayStr)
+        checkInDates: prev.checkInDates.filter(d => d !== todayISO)
       }));
     } else {
-      // Toggle ON today's check-in
-      const updatedDates = [...activeHabit.checkInDates, todayStr];
+      const updatedDates = [...activeHabit.checkInDates, todayISO];
 
       try {
         confetti({
@@ -140,14 +137,13 @@ export default function App() {
         });
       } catch (e) {}
 
-      // If reached 21/21!
       if (updatedDates.length >= 21) {
-        alert(`🎉 CONGRATULATIONS! You completed all 21 Days of "${activeHabit.title}" on ${todayStr}!`);
+        alert(`🎉 CONGRATULATIONS! You completed all 21 Days of "${activeHabit.title}"!`);
 
         const newMastered = {
           id: 'm-' + Date.now(),
           title: activeHabit.title,
-          completedDate: `${todayStr} (21/21 Days)`,
+          completedDate: 'Completed 21/21 Days',
           tag: activeHabit.categoryTag || 'Mastered',
           tagColor: activeHabit.tagColor || 'tag-green'
         };
@@ -173,8 +169,7 @@ export default function App() {
       text: newTodoText.trim(),
       tag: 'Task',
       tagColor: 'tag-blue',
-      completed: false,
-      date: todayStr
+      completed: false
     };
 
     setTodos([newItem, ...todos]);
@@ -204,7 +199,7 @@ export default function App() {
 
   // Start New 21-Day Challenge
   const startNewChallenge = (title, tag, tagColor) => {
-    if (activeHabit && !window.confirm(`Start "${title}" as your active 21-Day Challenge? (This will replace your current active challenge)`)) {
+    if (activeHabit && !window.confirm(`Start "${title}" as your active 21-Day Challenge?`)) {
       return;
     }
 
@@ -213,7 +208,7 @@ export default function App() {
       title: title,
       categoryTag: tag || 'Challenge',
       tagColor: tagColor || 'tag-green',
-      startDate: todayStr,
+      startDate: todayISO,
       checkInDates: [],
       targetDays: 21
     };
@@ -222,28 +217,23 @@ export default function App() {
     setActiveTab('today');
   };
 
-  // Reset to Fresh State
-  const handleResetToCleanState = () => {
-    if (window.confirm('Reset app to a fresh empty state to start your own real 21-day challenge?')) {
+  // Clean Reset Option
+  const handleCleanReset = () => {
+    if (window.confirm('Clear sample data and start fresh?')) {
       setActiveHabit(null);
       setTodos([]);
-      localStorage.removeItem('49habits_v2_active');
-      localStorage.removeItem('49habits_v2_todos');
+      localStorage.removeItem('49habits_v3_active');
+      localStorage.removeItem('49habits_v3_todos');
     }
   };
 
   return (
     <div className="mobile-app-shell">
-      {/* Top Header */}
+      {/* Polished Top Header (No developer debug labels!) */}
       <header className="app-header">
-        <div>
-          <h1 className="header-date">{getHeaderDateString()}</h1>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Real Calendar Date • {todayStr}
-          </div>
-        </div>
+        <h1 className="header-date">{getPolishedHeaderDate()}</h1>
         <div className="header-mastered-badge">
-          {masteredHabits.length} Mastered
+          {masteredHabits.length} Habits Mastered
         </div>
       </header>
 
@@ -279,15 +269,15 @@ export default function App() {
                   })}
                 </div>
 
-                {/* Real Calendar Check-In Button */}
+                {/* Polished Human Button */}
                 <button 
                   className={`checkin-btn-balanced ${isCheckedToday ? 'checked' : ''}`}
                   onClick={handleCheckInToday}
                 >
                   {isCheckedToday ? (
-                    <><CheckCircle2 size={18} /> Checked-in for Today ({todayStr})</>
+                    <><CheckCircle2 size={18} /> Completed Today</>
                   ) : (
-                    <><Check size={18} strokeWidth={3} /> Check-in Day {currentDayNum} ({todayStr})</>
+                    <><Check size={18} strokeWidth={3} /> Check-in Day {currentDayNum}</>
                   )}
                 </button>
               </div>
@@ -296,7 +286,7 @@ export default function App() {
                 <Award size={36} color="#10b981" style={{ marginBottom: '8px' }} />
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>No Active 21-Day Challenge</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '6px 0 16px' }}>
-                  Pick your single habit challenge from your library to start your real 21-day journey today!
+                  Pick a single habit challenge from your library to start your 21-day journey!
                 </p>
                 <button className="btn-emerald-solid" onClick={() => setActiveTab('journey')}>
                   <Compass size={18} /> Browse Habit Library
@@ -359,16 +349,6 @@ export default function App() {
                   ))
                 )}
               </div>
-            </div>
-
-            {/* Quick Reset Option for User */}
-            <div style={{ textAlign: 'center', marginTop: '10px' }}>
-              <button 
-                onClick={handleResetToCleanState}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              >
-                <RefreshCw size={12} /> Start Fresh (Clear Sample Data)
-              </button>
             </div>
           </div>
         ) : (
@@ -447,6 +427,15 @@ export default function App() {
                       Start
                     </button>
                   </div>
+                </div>
+
+                <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                  <button 
+                    onClick={handleCleanReset}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <RefreshCw size={12} /> Clear Sample Data & Start Fresh
+                  </button>
                 </div>
               </div>
             </div>
