@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X
 } from 'lucide-react';
@@ -19,7 +19,7 @@ const getPolishedHeaderDate = () => {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 };
 
-// Reads or generates Private Sync Key
+// Reads initial sync key
 const getInitialSyncKey = () => {
   try {
     const urlParams = new URLSearchParams(window.location.search);
@@ -33,7 +33,7 @@ const getInitialSyncKey = () => {
     const saved = localStorage.getItem('49habits_sync_key');
     if (saved) return saved;
 
-    return null; // Prompt user on first device load if not set
+    return null;
   } catch (e) {
     return null;
   }
@@ -61,6 +61,10 @@ export default function App() {
   const [syncKey, setSyncKey] = useState(getInitialSyncKey());
   const [showSyncModal, setShowSyncModal] = useState(!getInitialSyncKey());
   const [inputSyncKey, setInputSyncKey] = useState('');
+
+  // Flag to break infinite real-time echo feedback loops!
+  const isRemoteUpdateRef = useRef(false);
+  const lastPushedStateRef = useRef('');
 
   // Level Progress state
   const [currentLevel, setCurrentLevel] = useState(() => {
@@ -96,6 +100,7 @@ export default function App() {
 
     fetchSupabaseData(syncKey).then(cloudData => {
       if (cloudData) {
+        isRemoteUpdateRef.current = true;
         if (cloudData.currentLevel) setCurrentLevel(cloudData.currentLevel);
         if (Array.isArray(cloudData.activeCheckIns)) setActiveCheckIns(cloudData.activeCheckIns);
         if (Array.isArray(cloudData.masteredLevels)) setMasteredLevels(cloudData.masteredLevels);
@@ -103,14 +108,23 @@ export default function App() {
     });
   }, [syncKey]);
 
-  // LocalStorage & Supabase Push
+  // LocalStorage & Echo-Protected Supabase Push
   useEffect(() => {
     try {
       localStorage.setItem('49habits_seq_level', JSON.stringify(currentLevel));
       localStorage.setItem('49habits_seq_checkins', JSON.stringify(activeCheckIns));
       localStorage.setItem('49habits_seq_mastered', JSON.stringify(masteredLevels));
 
-      if (syncKey) {
+      // If state change was triggered by incoming remote broadcast, do NOT push back to Supabase!
+      if (isRemoteUpdateRef.current) {
+        isRemoteUpdateRef.current = false;
+        return;
+      }
+
+      const currentStateStr = JSON.stringify({ currentLevel, activeCheckIns, masteredLevels });
+      // Only push if state actually changed from last pushed state
+      if (syncKey && currentStateStr !== lastPushedStateRef.current) {
+        lastPushedStateRef.current = currentStateStr;
         pushSupabaseData(syncKey, { currentLevel, activeCheckIns, masteredLevels });
       }
     } catch (e) {
@@ -118,15 +132,27 @@ export default function App() {
     }
   }, [currentLevel, activeCheckIns, masteredLevels, syncKey]);
 
-  // Supabase Real-Time Listener
+  // Supabase Real-Time Listener with Echo Safeguard
   useEffect(() => {
     if (!syncKey) return;
 
     const unsubscribe = subscribeSupabaseRealtime(syncKey, (newData) => {
       if (newData) {
-        if (newData.currentLevel) setCurrentLevel(newData.currentLevel);
-        if (Array.isArray(newData.activeCheckIns)) setActiveCheckIns(newData.activeCheckIns);
-        if (Array.isArray(newData.masteredLevels)) setMasteredLevels(newData.masteredLevels);
+        const incomingStateStr = JSON.stringify({
+          currentLevel: newData.currentLevel,
+          activeCheckIns: newData.activeCheckIns,
+          masteredLevels: newData.masteredLevels
+        });
+
+        // Only update local React state if remote state is different from what we currently have
+        if (incomingStateStr !== lastPushedStateRef.current) {
+          isRemoteUpdateRef.current = true;
+          lastPushedStateRef.current = incomingStateStr;
+
+          if (newData.currentLevel) setCurrentLevel(newData.currentLevel);
+          if (Array.isArray(newData.activeCheckIns)) setActiveCheckIns(newData.activeCheckIns);
+          if (Array.isArray(newData.masteredLevels)) setMasteredLevels(newData.masteredLevels);
+        }
       }
     });
 
@@ -144,9 +170,9 @@ export default function App() {
     localStorage.setItem('49habits_sync_key', cleanKey);
     setSyncKey(cleanKey);
 
-    // Fetch progress for this private key
     fetchSupabaseData(cleanKey).then(cloudData => {
       if (cloudData) {
+        isRemoteUpdateRef.current = true;
         if (cloudData.currentLevel) setCurrentLevel(cloudData.currentLevel);
         if (Array.isArray(cloudData.activeCheckIns)) setActiveCheckIns(cloudData.activeCheckIns);
         if (Array.isArray(cloudData.masteredLevels)) setMasteredLevels(cloudData.masteredLevels);
@@ -203,7 +229,7 @@ export default function App() {
 
   return (
     <div className="mobile-app-shell">
-      {/* Top Header (Clicking badge opens Private Sync Key modal) */}
+      {/* Top Header */}
       <header className="app-header">
         <div>
           <h1 className="header-date">{getPolishedHeaderDate()}</h1>
@@ -272,7 +298,7 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* Tab 2: Journey (Sequential 49 Levels Roadmap) */
+          /* Tab 2: Journey */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-pop">
             <div>
               <h3 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -409,7 +435,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Bottom Nav Bar - STRICTLY 2 TABS */}
+      {/* Bottom Nav Bar */}
       <nav className="bottom-nav-balanced">
         <button 
           className={`nav-tab-btn ${activeTab === 'today' ? 'active' : ''}`}
