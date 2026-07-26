@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Check, Award, Compass, CheckCircle2, Lock, Flame
+  Check, Award, Compass, CheckCircle2, Lock, KeyRound, X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -19,19 +19,27 @@ const getPolishedHeaderDate = () => {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 };
 
-const getOrGenerateSyncCode = () => {
+// Reads or generates Private Sync Key
+const getInitialSyncKey = () => {
   try {
-    const saved = localStorage.getItem('49habits_sync_code');
+    const urlParams = new URLSearchParams(window.location.search);
+    const syncParam = urlParams.get('sync');
+    if (syncParam) {
+      const cleanParam = syncParam.trim().toUpperCase();
+      localStorage.setItem('49habits_sync_key', cleanParam);
+      return cleanParam;
+    }
+
+    const saved = localStorage.getItem('49habits_sync_key');
     if (saved) return saved;
-    const newCode = `HABIT-${Math.floor(1000 + Math.random() * 9000)}`;
-    localStorage.setItem('49habits_sync_code', newCode);
-    return newCode;
+
+    return null; // Prompt user on first device load if not set
   } catch (e) {
-    return 'HABIT-1001';
+    return null;
   }
 };
 
-// 49 Sequential Levels Master Definition (Level 1 defined, 48 placeholders)
+// 49 Sequential Levels Master Definition
 const SEQUENTIAL_49_LEVELS = [
   {
     level: 1,
@@ -49,10 +57,12 @@ const SEQUENTIAL_49_LEVELS = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('today');
-  const [todayISO, setTodayISO] = useState(getTodayISO());
-  const [syncCode] = useState(getOrGenerateSyncCode());
+  const [todayISO] = useState(getTodayISO());
+  const [syncKey, setSyncKey] = useState(getInitialSyncKey());
+  const [showSyncModal, setShowSyncModal] = useState(!getInitialSyncKey());
+  const [inputSyncKey, setInputSyncKey] = useState('');
 
-  // Current Level Progress state (Default: Level 1)
+  // Level Progress state
   const [currentLevel, setCurrentLevel] = useState(() => {
     try {
       const saved = localStorage.getItem('49habits_seq_level');
@@ -62,7 +72,6 @@ export default function App() {
     }
   });
 
-  // Active Habit Progress (Check-in dates array for current active level)
   const [activeCheckIns, setActiveCheckIns] = useState(() => {
     try {
       const saved = localStorage.getItem('49habits_seq_checkins');
@@ -81,22 +90,39 @@ export default function App() {
     }
   });
 
-  // LocalStorage & Supabase Realtime Sync
+  // Load initial cloud data when syncKey changes
+  useEffect(() => {
+    if (!syncKey) return;
+
+    fetchSupabaseData(syncKey).then(cloudData => {
+      if (cloudData) {
+        if (cloudData.currentLevel) setCurrentLevel(cloudData.currentLevel);
+        if (Array.isArray(cloudData.activeCheckIns)) setActiveCheckIns(cloudData.activeCheckIns);
+        if (Array.isArray(cloudData.masteredLevels)) setMasteredLevels(cloudData.masteredLevels);
+      }
+    });
+  }, [syncKey]);
+
+  // LocalStorage & Supabase Push
   useEffect(() => {
     try {
       localStorage.setItem('49habits_seq_level', JSON.stringify(currentLevel));
       localStorage.setItem('49habits_seq_checkins', JSON.stringify(activeCheckIns));
       localStorage.setItem('49habits_seq_mastered', JSON.stringify(masteredLevels));
 
-      pushSupabaseData(syncCode, { currentLevel, activeCheckIns, masteredLevels });
+      if (syncKey) {
+        pushSupabaseData(syncKey, { currentLevel, activeCheckIns, masteredLevels });
+      }
     } catch (e) {
       console.error('Storage sync error:', e);
     }
-  }, [currentLevel, activeCheckIns, masteredLevels, syncCode]);
+  }, [currentLevel, activeCheckIns, masteredLevels, syncKey]);
 
-  // Supabase Listener
+  // Supabase Real-Time Listener
   useEffect(() => {
-    const unsubscribe = subscribeSupabaseRealtime(syncCode, (newData) => {
+    if (!syncKey) return;
+
+    const unsubscribe = subscribeSupabaseRealtime(syncKey, (newData) => {
       if (newData) {
         if (newData.currentLevel) setCurrentLevel(newData.currentLevel);
         if (Array.isArray(newData.activeCheckIns)) setActiveCheckIns(newData.activeCheckIns);
@@ -107,7 +133,29 @@ export default function App() {
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
-  }, [syncCode]);
+  }, [syncKey]);
+
+  // Handle Single Field Sync Key Login
+  const handleSaveSyncKey = (e) => {
+    e.preventDefault();
+    if (!inputSyncKey.trim()) return;
+
+    const cleanKey = inputSyncKey.trim().toUpperCase();
+    localStorage.setItem('49habits_sync_key', cleanKey);
+    setSyncKey(cleanKey);
+
+    // Fetch progress for this private key
+    fetchSupabaseData(cleanKey).then(cloudData => {
+      if (cloudData) {
+        if (cloudData.currentLevel) setCurrentLevel(cloudData.currentLevel);
+        if (Array.isArray(cloudData.activeCheckIns)) setActiveCheckIns(cloudData.activeCheckIns);
+        if (Array.isArray(cloudData.masteredLevels)) setMasteredLevels(cloudData.masteredLevels);
+      }
+    });
+
+    setShowSyncModal(false);
+    setInputSyncKey('');
+  };
 
   // Active level data
   const activeLevelData = SEQUENTIAL_49_LEVELS.find(l => l.level === currentLevel) || SEQUENTIAL_49_LEVELS[0];
@@ -118,10 +166,8 @@ export default function App() {
   // Handle Today's Level Check-In
   const handleLevelCheckIn = () => {
     if (isCheckedToday) {
-      // Toggle OFF
       setActiveCheckIns(prev => prev.filter(d => d !== todayISO));
     } else {
-      // Toggle ON
       const updatedDates = [...activeCheckIns, todayISO];
 
       try {
@@ -157,7 +203,7 @@ export default function App() {
 
   return (
     <div className="mobile-app-shell">
-      {/* Top Header */}
+      {/* Top Header (Clicking badge opens Private Sync Key modal) */}
       <header className="app-header">
         <div>
           <h1 className="header-date">{getPolishedHeaderDate()}</h1>
@@ -165,16 +211,21 @@ export default function App() {
             49 Habits Journey
           </div>
         </div>
-        <div className="header-mastered-badge">
+        <button 
+          onClick={() => setShowSyncModal(true)}
+          className="header-mastered-badge"
+          style={{ cursor: 'pointer', border: 'none' }}
+          title="Account Sync Key"
+        >
           {safeMastered.length}/49 Mastered
-        </div>
+        </button>
       </header>
 
       {/* Main Content Body */}
       <main className="main-content">
         {activeTab === 'today' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Single 21-Day Habit Challenge Card (NO Today Checklist, NO task creation!) */}
+            {/* Single 21-Day Habit Challenge Card */}
             <div className="hero-challenge-card animate-pop" style={{ margin: '12px 0' }}>
               <div className="hero-card-header">
                 <span className="hero-subtitle-tag" style={{ color: '#10b981', fontWeight: 700 }}>
@@ -306,7 +357,59 @@ export default function App() {
         )}
       </main>
 
-      {/* Bottom Nav Bar */}
+      {/* Single Field Private Sync Key Modal */}
+      {showSyncModal && (
+        <div className="modal-overlay" onClick={() => syncKey && setShowSyncModal(false)}>
+          <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <KeyRound size={22} color="#10b981" />
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Private Sync Key</h2>
+              </div>
+              {syncKey && (
+                <button 
+                  onClick={() => setShowSyncModal(false)}
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                >
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
+              Enter your private sync key (e.g. <strong>Jinna-2026</strong>) to sync your 21-day level progress across all your devices!
+            </p>
+
+            {syncKey && (
+              <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '10px', textAlign: 'center', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>CONNECTED SYNC KEY</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981', letterSpacing: '0.04em', marginTop: '2px' }}>
+                  {syncKey}
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveSyncKey} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Enter or Create Your Private Sync Key:
+              </label>
+              <input 
+                type="text" 
+                className="input-balanced"
+                placeholder="e.g. Jinna-2026"
+                value={inputSyncKey}
+                onChange={(e) => setInputSyncKey(e.target.value)}
+                required
+              />
+              <button type="submit" className="btn-emerald-solid">
+                Save & Sync Devices
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Nav Bar - STRICTLY 2 TABS */}
       <nav className="bottom-nav-balanced">
         <button 
           className={`nav-tab-btn ${activeTab === 'today' ? 'active' : ''}`}
