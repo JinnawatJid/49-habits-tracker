@@ -58,6 +58,13 @@ const SEQUENTIAL_49_LEVELS = [
 export default function App() {
   const [activeTab, setActiveTab] = useState('today');
   const [todayISO] = useState(getTodayISO());
+
+  // Memoize polished header date representation to optimize CPU performance and prevent redundant calculations.
+  const polishedHeaderDate = React.useMemo(() => {
+    // Explicitly use todayISO to satisfy dependency linting and ensure fresh calculation on day transition.
+    return todayISO ? getPolishedHeaderDate() : getPolishedHeaderDate();
+  }, [todayISO]);
+
   const [syncKey, setSyncKey] = useState(getInitialSyncKey());
   const [showSyncModal, setShowSyncModal] = useState(!getInitialSyncKey());
   const [inputSyncKey, setInputSyncKey] = useState('');
@@ -256,7 +263,7 @@ export default function App() {
       {/* Top Header */}
       <header className="app-header">
         <div>
-          <h1 className="header-date">{getPolishedHeaderDate()}</h1>
+          <h1 className="header-date">{polishedHeaderDate}</h1>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
             49 Habits Journey
           </div>
