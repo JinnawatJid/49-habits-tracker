@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Check, Plus, Award, Compass, Trash2, CheckCircle2, 
-  Sparkles, Flame, RefreshCw, Link2, Database
+  Sparkles, Flame
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -23,84 +23,84 @@ const getPolishedHeaderDate = () => {
 
 // Generate initial Sync Code behind the scenes
 const getOrGenerateSyncCode = () => {
-  const saved = localStorage.getItem('49habits_sync_code');
-  if (saved) return saved;
-  const newCode = `HABIT-${Math.floor(1000 + Math.random() * 9000)}`;
-  localStorage.setItem('49habits_sync_code', newCode);
-  return newCode;
+  try {
+    const saved = localStorage.getItem('49habits_sync_code');
+    if (saved) return saved;
+    const newCode = `HABIT-${Math.floor(1000 + Math.random() * 9000)}`;
+    localStorage.setItem('49habits_sync_code', newCode);
+    return newCode;
+  } catch (e) {
+    return 'HABIT-1001';
+  }
 };
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('today');
   const [todayISO, setTodayISO] = useState(getTodayISO());
-  const [syncCode, setSyncCode] = useState(getOrGenerateSyncCode());
-  const [showSyncModal, setShowSyncModal] = useState(false);
-  const [inputSyncCode, setInputSyncCode] = useState('');
+  const [syncCode] = useState(getOrGenerateSyncCode());
 
-  // 100% Clean Production State (Zero Mock Data!)
+  // 100% Clean Production State (Zero Mock Data)
   const [activeHabit, setActiveHabit] = useState(() => {
-    const saved = localStorage.getItem('49habits_clean_active');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('49habits_clean_active');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
   const [masteredHabits, setMasteredHabits] = useState(() => {
-    const saved = localStorage.getItem('49habits_clean_mastered');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('49habits_clean_mastered');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const [todos, setTodos] = useState(() => {
-    const saved = localStorage.getItem('49habits_clean_todos');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('49habits_clean_todos');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const [newTodoText, setNewTodoText] = useState('');
   const [customHabitTitle, setCustomHabitTitle] = useState('');
 
-  // LocalStorage & Supabase Sync
+  // LocalStorage & Silent Supabase Sync
   useEffect(() => {
-    localStorage.setItem('49habits_clean_active', JSON.stringify(activeHabit));
-    localStorage.setItem('49habits_clean_mastered', JSON.stringify(masteredHabits));
-    localStorage.setItem('49habits_clean_todos', JSON.stringify(todos));
-
-    pushSupabaseData(syncCode, { activeHabit, masteredHabits, todos });
+    try {
+      localStorage.setItem('49habits_clean_active', JSON.stringify(activeHabit));
+      localStorage.setItem('49habits_clean_mastered', JSON.stringify(masteredHabits));
+      localStorage.setItem('49habits_clean_todos', JSON.stringify(todos));
+      pushSupabaseData(syncCode, { activeHabit, masteredHabits, todos });
+    } catch (e) {
+      console.error('Storage/Sync error:', e);
+    }
   }, [activeHabit, masteredHabits, todos, syncCode]);
 
-  // Supabase Real-Time Listener
+  // Silent Supabase Real-Time Listener
   useEffect(() => {
     const unsubscribe = subscribeSupabaseRealtime(syncCode, (newData) => {
-      if (newData.active_habit !== undefined) setActiveHabit(newData.active_habit);
-      if (newData.mastered_habits) setMasteredHabits(newData.mastered_habits);
-      if (newData.todos) setTodos(newData.todos);
-    });
-
-    return () => unsubscribe();
-  }, [syncCode]);
-
-  // Handle Multi-Device Supabase Sync Pairing
-  const handlePairDevice = (e) => {
-    e.preventDefault();
-    if (!inputSyncCode.trim()) return;
-
-    const formattedCode = inputSyncCode.trim().toUpperCase();
-    localStorage.setItem('49habits_sync_code', formattedCode);
-    setSyncCode(formattedCode);
-
-    fetchSupabaseData(formattedCode).then(cloudData => {
-      if (cloudData) {
-        if (cloudData.active_habit !== undefined) setActiveHabit(cloudData.active_habit);
-        if (cloudData.mastered_habits) setMasteredHabits(cloudData.mastered_habits);
-        if (cloudData.todos) setTodos(cloudData.todos);
+      if (newData) {
+        if (newData.active_habit !== undefined) setActiveHabit(newData.active_habit);
+        if (Array.isArray(newData.mastered_habits)) setMasteredHabits(newData.mastered_habits);
+        if (Array.isArray(newData.todos)) setTodos(newData.todos);
       }
     });
 
-    setShowSyncModal(false);
-    setInputSyncCode('');
-    alert(`Device paired! All progress is now synced.`);
-  };
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [syncCode]);
 
-  // Calculations
-  const isCheckedToday = activeHabit ? activeHabit.checkInDates.includes(todayISO) : false;
-  const completedCount = activeHabit ? activeHabit.checkInDates.length : 0;
+  // Calculations with safe optional chaining
+  const checkInDates = activeHabit && Array.isArray(activeHabit.checkInDates) ? activeHabit.checkInDates : [];
+  const isCheckedToday = checkInDates.includes(todayISO);
+  const completedCount = checkInDates.length;
   const currentDayNum = isCheckedToday ? completedCount : completedCount + 1;
 
   // Handle Today's Check-In
@@ -110,10 +110,10 @@ export default function App() {
     if (isCheckedToday) {
       setActiveHabit(prev => ({
         ...prev,
-        checkInDates: prev.checkInDates.filter(d => d !== todayISO)
+        checkInDates: (prev?.checkInDates || []).filter(d => d !== todayISO)
       }));
     } else {
-      const updatedDates = [...activeHabit.checkInDates, todayISO];
+      const updatedDates = [...checkInDates, todayISO];
 
       try {
         confetti({
@@ -135,7 +135,7 @@ export default function App() {
           tagColor: 'tag-green'
         };
 
-        setMasteredHabits([newMastered, ...masteredHabits]);
+        setMasteredHabits([newMastered, ...(masteredHabits || [])]);
         setActiveHabit(null);
       } else {
         setActiveHabit(prev => ({
@@ -159,13 +159,13 @@ export default function App() {
       completed: false
     };
 
-    setTodos([newItem, ...todos]);
+    setTodos([newItem, ...(todos || [])]);
     setNewTodoText('');
   };
 
   // Toggle Task
   const toggleTodo = (id) => {
-    setTodos(prev => prev.map(t => {
+    setTodos(prev => (prev || []).map(t => {
       if (t.id === id) {
         const nextState = !t.completed;
         if (nextState) {
@@ -181,7 +181,7 @@ export default function App() {
 
   // Delete Task
   const deleteTodo = (id) => {
-    setTodos(prev => prev.filter(t => t.id !== id));
+    setTodos(prev => (prev || []).filter(t => t.id !== id));
   };
 
   // Create User's Custom 21-Day Challenge
@@ -208,13 +208,16 @@ export default function App() {
     setActiveTab('today');
   };
 
+  const safeMastered = Array.isArray(masteredHabits) ? masteredHabits : [];
+  const safeTodos = Array.isArray(todos) ? todos : [];
+
   return (
     <div className="mobile-app-shell">
-      {/* Polished Clean Header (NO debug labels or raw sync text!) */}
+      {/* Header matching approved mockup exactly */}
       <header className="app-header">
         <h1 className="header-date">{getPolishedHeaderDate()}</h1>
         <div className="header-mastered-badge">
-          {masteredHabits.length} Habits Mastered
+          {safeMastered.length} Habits Mastered
         </div>
       </header>
 
@@ -250,7 +253,7 @@ export default function App() {
                   })}
                 </div>
 
-                {/* Polished Human Button */}
+                {/* Polished Button */}
                 <button 
                   className={`checkin-btn-balanced ${isCheckedToday ? 'checked' : ''}`}
                   onClick={handleCheckInToday}
@@ -294,12 +297,12 @@ export default function App() {
               </form>
 
               <div>
-                {todos.length === 0 ? (
+                {safeTodos.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '28px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
                     Your checklist is empty for today. Add a task above to get started!
                   </div>
                 ) : (
-                  todos.map(item => (
+                  safeTodos.map(item => (
                     <div key={item.id} className="task-card-row">
                       <div 
                         className={`task-checkbox-rounded ${item.completed ? 'checked' : ''}`}
@@ -328,20 +331,20 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* Tab 2: My Journey (Clean 100% User-Driven) */
+          /* Tab 2: My Journey */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }} className="animate-pop">
             <div>
               <h3 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Award size={20} color="#f59e0b" /> Mastered Habits ({masteredHabits.length})
+                <Award size={20} color="#f59e0b" /> Mastered Habits ({safeMastered.length})
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {masteredHabits.length === 0 ? (
+                {safeMastered.length === 0 ? (
                   <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
                     Complete your first 21-day challenge to unlock your first trophy here!
                   </div>
                 ) : (
-                  masteredHabits.map(m => (
+                  safeMastered.map(m => (
                     <div key={m.id} className="task-card-row">
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#feefc3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
                         🏆
@@ -350,14 +353,14 @@ export default function App() {
                         <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{m.title}</div>
                         <div style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 600 }}>{m.completedDate}</div>
                       </div>
-                      <span className={`tag-pill ${m.tagColor || 'tag-green'}`}>{m.tag}</span>
+                      <span className={`tag-pill ${m.tagColor || 'tag-green'}`}>{m.tag || 'Mastered'}</span>
                     </div>
                   ))
                 )}
               </div>
             </div>
 
-            {/* Create Your 21-Day Habit Challenge (Clean, Zero Mock Data) */}
+            {/* Create Your 21-Day Habit Challenge */}
             <div>
               <h3 className="section-heading">Create 21-Day Habit Challenge</h3>
 
@@ -382,47 +385,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Supabase Multi-Device Sync Modal */}
-      {showSyncModal && (
-        <div className="modal-overlay" onClick={() => setShowSyncModal(false)}>
-          <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <Database size={24} color="#10b981" />
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Multi-Device Sync</h2>
-            </div>
-
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Pair your phone, tablet, or laptop to sync your 21-day progress automatically across devices!
-            </p>
-
-            <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '12px', textAlign: 'center', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>YOUR CURRENT DEVICE SYNC CODE</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981', letterSpacing: '0.05em', marginTop: '4px' }}>
-                {syncCode}
-              </div>
-            </div>
-
-            <form onSubmit={handlePairDevice} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Enter Sync Code from your other device:</label>
-              <input 
-                type="text" 
-                className="input-balanced"
-                placeholder="e.g. HABIT-7492"
-                value={inputSyncCode}
-                onChange={(e) => setInputSyncCode(e.target.value)}
-                style={{ textTransform: 'uppercase' }}
-                required
-              />
-              <button type="submit" className="btn-emerald-solid">Pair Devices</button>
-              <button type="button" className="btn-secondary" style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => setShowSyncModal(false)}>
-                Cancel
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Bottom Nav Bar */}
+      {/* Bottom Nav Bar - STRICTLY 2 TABS matching approved mockup */}
       <nav className="bottom-nav-balanced">
         <button 
           className={`nav-tab-btn ${activeTab === 'today' ? 'active' : ''}`}
@@ -442,17 +405,6 @@ export default function App() {
             <Compass size={18} />
           </div>
           <span>Journey</span>
-        </button>
-
-        <button 
-          className="nav-tab-btn"
-          onClick={() => setShowSyncModal(true)}
-          title="Device Sync"
-        >
-          <div className="nav-tab-icon">
-            <Link2 size={18} />
-          </div>
-          <span>Sync</span>
         </button>
       </nav>
     </div>
