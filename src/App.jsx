@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Check, Plus, Award, Compass, Trash2, CheckCircle2, 
-  Sparkles, Calendar, Flame, RefreshCw, Link2, Database
+  Sparkles, Flame, RefreshCw, Link2, Database
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -16,11 +16,12 @@ const getTodayISO = () => {
   return `${year}-${month}-${day}`;
 };
 
+// Clean Human Date Header
 const getPolishedHeaderDate = () => {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 };
 
-// Generate initial Sync Code
+// Generate initial Sync Code behind the scenes
 const getOrGenerateSyncCode = () => {
   const saved = localStorage.getItem('49habits_sync_code');
   if (saved) return saved;
@@ -29,15 +30,6 @@ const getOrGenerateSyncCode = () => {
   return newCode;
 };
 
-// Curated 21-Day Habit Library inspired by 49 Habits
-const HABIT_LIBRARY = [
-  { title: 'Read 10 Pages Daily', tag: 'Book Club', tagColor: 'tag-green', desc: 'Continuous daily reading to build knowledge.' },
-  { title: 'Drink 1L Water Daily', tag: 'Self Care', tagColor: 'tag-pink', desc: 'Hydrate your body first thing upon waking.' },
-  { title: '10-Min Morning Meditation', tag: 'Mindfulness', tagColor: 'tag-yellow', desc: 'Clear your mind before starting your workday.' },
-  { title: 'Plan Today in Writing', tag: 'Chapter 1', tagColor: 'tag-blue', desc: 'Chapter 1 Rule: Write down your daily to-do list.' },
-  { title: '15-Min Evening Screen-Free Time', tag: 'Rest', tagColor: 'tag-purple', desc: 'Wind down your eyes and brain before sleep.' }
-];
-
 export default function App() {
   const [activeTab, setActiveTab] = useState('today');
   const [todayISO, setTodayISO] = useState(getTodayISO());
@@ -45,20 +37,20 @@ export default function App() {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [inputSyncCode, setInputSyncCode] = useState('');
 
-  // Clean Production State (No pre-loaded mock data!)
+  // 100% Clean Production State (Zero Mock Data!)
   const [activeHabit, setActiveHabit] = useState(() => {
-    const saved = localStorage.getItem('49habits_v4_active');
-    return saved ? JSON.parse(saved) : null; // Starts clean!
+    const saved = localStorage.getItem('49habits_clean_active');
+    return saved ? JSON.parse(saved) : null;
   });
 
   const [masteredHabits, setMasteredHabits] = useState(() => {
-    const saved = localStorage.getItem('49habits_v4_mastered');
-    return saved ? JSON.parse(saved) : []; // Starts clean!
+    const saved = localStorage.getItem('49habits_clean_mastered');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [todos, setTodos] = useState(() => {
-    const saved = localStorage.getItem('49habits_v4_todos');
-    return saved ? JSON.parse(saved) : []; // Starts clean!
+    const saved = localStorage.getItem('49habits_clean_todos');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [newTodoText, setNewTodoText] = useState('');
@@ -66,9 +58,9 @@ export default function App() {
 
   // LocalStorage & Supabase Sync
   useEffect(() => {
-    localStorage.setItem('49habits_v4_active', JSON.stringify(activeHabit));
-    localStorage.setItem('49habits_v4_mastered', JSON.stringify(masteredHabits));
-    localStorage.setItem('49habits_v4_todos', JSON.stringify(todos));
+    localStorage.setItem('49habits_clean_active', JSON.stringify(activeHabit));
+    localStorage.setItem('49habits_clean_mastered', JSON.stringify(masteredHabits));
+    localStorage.setItem('49habits_clean_todos', JSON.stringify(todos));
 
     pushSupabaseData(syncCode, { activeHabit, masteredHabits, todos });
   }, [activeHabit, masteredHabits, todos, syncCode]);
@@ -103,7 +95,7 @@ export default function App() {
 
     setShowSyncModal(false);
     setInputSyncCode('');
-    alert(`Device paired to Supabase Sync Code: ${formattedCode}! Progress will sync in real time.`);
+    alert(`Device paired! All progress is now synced.`);
   };
 
   // Calculations
@@ -139,8 +131,8 @@ export default function App() {
           id: 'm-' + Date.now(),
           title: activeHabit.title,
           completedDate: 'Completed 21/21 Days',
-          tag: activeHabit.categoryTag || 'Mastered',
-          tagColor: activeHabit.tagColor || 'tag-green'
+          tag: 'Mastered',
+          tagColor: 'tag-green'
         };
 
         setMasteredHabits([newMastered, ...masteredHabits]);
@@ -192,39 +184,35 @@ export default function App() {
     setTodos(prev => prev.filter(t => t.id !== id));
   };
 
-  // Start New 21-Day Challenge
-  const startNewChallenge = (title, tag, tagColor) => {
-    if (activeHabit && !window.confirm(`Start "${title}" as your active 21-Day Challenge?`)) {
+  // Create User's Custom 21-Day Challenge
+  const handleCreateCustomChallenge = (e) => {
+    e.preventDefault();
+    if (!customHabitTitle.trim()) return;
+
+    if (activeHabit && !window.confirm(`Start "${customHabitTitle.trim()}" as your active 21-Day Challenge?`)) {
       return;
     }
 
     const newHabit = {
       id: 'h-' + Date.now(),
-      title: title,
-      categoryTag: tag || 'Challenge',
-      tagColor: tagColor || 'tag-green',
+      title: customHabitTitle.trim(),
+      categoryTag: '21-Day Habit',
+      tagColor: 'tag-green',
       startDate: todayISO,
       checkInDates: [],
       targetDays: 21
     };
 
     setActiveHabit(newHabit);
+    setCustomHabitTitle('');
     setActiveTab('today');
   };
 
   return (
     <div className="mobile-app-shell">
-      {/* Polished Top Header */}
+      {/* Polished Clean Header (NO debug labels or raw sync text!) */}
       <header className="app-header">
-        <div>
-          <h1 className="header-date">{getPolishedHeaderDate()}</h1>
-          <button 
-            onClick={() => setShowSyncModal(true)}
-            style={{ background: 'none', border: 'none', color: '#10b981', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}
-          >
-            <Database size={12} /> Supabase Sync: {syncCode}
-          </button>
-        </div>
+        <h1 className="header-date">{getPolishedHeaderDate()}</h1>
         <div className="header-mastered-badge">
           {masteredHabits.length} Habits Mastered
         </div>
@@ -280,10 +268,10 @@ export default function App() {
                 <Award size={40} color="#10b981" style={{ marginBottom: '12px' }} />
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Start Your 21-Day Journey</h3>
                 <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: '8px 0 20px', lineHeight: 1.5 }}>
-                  Choose <strong>1 single habit</strong> to transform your life over the next 21 days!
+                  Set your single habit challenge to transform your life over the next 21 days!
                 </p>
                 <button className="btn-emerald-solid" onClick={() => setActiveTab('journey')}>
-                  <Compass size={18} /> Select Your First Habit Challenge
+                  <Compass size={18} /> Create Your 21-Day Habit Challenge
                 </button>
               </div>
             )}
@@ -327,12 +315,6 @@ export default function App() {
                         {item.text}
                       </span>
 
-                      {item.tag && (
-                        <span className={`tag-pill ${item.tagColor || 'tag-green'}`}>
-                          {item.tag}
-                        </span>
-                      )}
-
                       <button 
                         onClick={() => deleteTodo(item.id)}
                         style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', marginLeft: '8px' }}
@@ -346,7 +328,7 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* Tab 2: My Journey */
+          /* Tab 2: My Journey (Clean 100% User-Driven) */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }} className="animate-pop">
             <div>
               <h3 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -375,54 +357,26 @@ export default function App() {
               </div>
             </div>
 
+            {/* Create Your 21-Day Habit Challenge (Clean, Zero Mock Data) */}
             <div>
-              <h3 className="section-heading">Select Your Next 21-Day Challenge</h3>
+              <h3 className="section-heading">Create 21-Day Habit Challenge</h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {HABIT_LIBRARY.map((lib, idx) => (
-                  <div key={idx} className="task-card-row" style={{ alignItems: 'flex-start', padding: '16px' }}>
-                    <div style={{ flex: 1, marginRight: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{lib.title}</div>
-                        <span className={`tag-pill ${lib.tagColor}`}>{lib.tag}</span>
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{lib.desc}</div>
-                    </div>
-                    <button 
-                      className="btn-emerald-solid"
-                      style={{ width: 'auto', padding: '8px 14px', fontSize: '0.8rem', flexShrink: 0 }}
-                      onClick={() => startNewChallenge(lib.title, lib.tag, lib.tagColor)}
-                    >
-                      Start 21d
-                    </button>
-                  </div>
-                ))}
-
-                <div className="card-balanced" style={{ background: '#f8fafc', borderStyle: 'dashed' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px' }}>+ Create Custom 21-Day Habit</div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input 
-                      type="text" 
-                      className="input-balanced" 
-                      placeholder="e.g. 10-min evening stretching"
-                      value={customHabitTitle}
-                      onChange={(e) => setCustomHabitTitle(e.target.value)}
-                    />
-                    <button 
-                      className="btn-emerald-solid"
-                      style={{ width: 'auto', padding: '0 16px' }}
-                      onClick={() => {
-                        if (customHabitTitle.trim()) {
-                          startNewChallenge(customHabitTitle.trim(), 'Custom', 'tag-purple');
-                          setCustomHabitTitle('');
-                        }
-                      }}
-                    >
-                      Start
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <form onSubmit={handleCreateCustomChallenge} className="card-balanced" style={{ background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  What habit do you want to challenge yourself with for 21 days?
+                </label>
+                <input 
+                  type="text" 
+                  className="input-balanced" 
+                  placeholder="e.g. Read 10 pages daily"
+                  value={customHabitTitle}
+                  onChange={(e) => setCustomHabitTitle(e.target.value)}
+                  required
+                />
+                <button type="submit" className="btn-emerald-solid">
+                  Start 21-Day Challenge
+                </button>
+              </form>
             </div>
           </div>
         )}
@@ -434,11 +388,11 @@ export default function App() {
           <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <Database size={24} color="#10b981" />
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Supabase Multi-Device Sync</h2>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Multi-Device Sync</h2>
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Enter your Sync Code on your phone, tablet, or laptop to pair your devices via Supabase real-time cloud sync!
+              Pair your phone, tablet, or laptop to sync your 21-day progress automatically across devices!
             </p>
 
             <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '12px', textAlign: 'center', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
@@ -459,7 +413,7 @@ export default function App() {
                 style={{ textTransform: 'uppercase' }}
                 required
               />
-              <button type="submit" className="btn-emerald-solid">Pair Devices via Supabase</button>
+              <button type="submit" className="btn-emerald-solid">Pair Devices</button>
               <button type="button" className="btn-secondary" style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => setShowSyncModal(false)}>
                 Cancel
               </button>
@@ -488,6 +442,17 @@ export default function App() {
             <Compass size={18} />
           </div>
           <span>Journey</span>
+        </button>
+
+        <button 
+          className="nav-tab-btn"
+          onClick={() => setShowSyncModal(true)}
+          title="Device Sync"
+        >
+          <div className="nav-tab-icon">
+            <Link2 size={18} />
+          </div>
+          <span>Sync</span>
         </button>
       </nav>
     </div>
