@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Check, Award, Compass, CheckCircle2, Lock, KeyRound, X
+  Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -62,7 +62,17 @@ export default function App() {
   const [showSyncModal, setShowSyncModal] = useState(!getInitialSyncKey());
   const [inputSyncKey, setInputSyncKey] = useState('');
 
-  // Safeguard refs to eliminate initial-mount overwrite race conditions & real-time echo loops
+  // Dark Mode Theme State
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('49habits_theme');
+      return saved ? saved : 'light';
+    } catch (e) {
+      return 'light';
+    }
+  });
+
+  // Safeguard refs
   const isInitializedRef = useRef(false);
   const isRemoteUpdateRef = useRef(false);
   const lastStateStrRef = useRef('');
@@ -95,7 +105,18 @@ export default function App() {
     }
   });
 
-  // STEP 1: On Mount or Sync Key Change -> Fetch Cloud Data BEFORE allowing any Pushes!
+  // Apply data-theme attribute on root HTML element
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('49habits_theme', theme);
+  }, [theme]);
+
+  // Toggle Theme Function
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // STEP 1: On Mount or Sync Key Change -> Fetch Cloud Data BEFORE allowing Pushes
   useEffect(() => {
     if (!syncKey) return;
     isInitializedRef.current = false;
@@ -106,26 +127,26 @@ export default function App() {
         if (cloudData.currentLevel) setCurrentLevel(cloudData.currentLevel);
         if (Array.isArray(cloudData.activeCheckIns)) setActiveCheckIns(cloudData.activeCheckIns);
         if (Array.isArray(cloudData.masteredLevels)) setMasteredLevels(cloudData.masteredLevels);
+        if (cloudData.theme) setTheme(cloudData.theme);
 
         lastStateStrRef.current = JSON.stringify({
           currentLevel: cloudData.currentLevel || 1,
           activeCheckIns: cloudData.activeCheckIns || [],
-          masteredLevels: cloudData.masteredLevels || []
+          masteredLevels: cloudData.masteredLevels || [],
+          theme: cloudData.theme || 'light'
         });
       }
-      // Enable cloud pushing ONLY after initial fetch completes!
       isInitializedRef.current = true;
     });
   }, [syncKey]);
 
-  // STEP 2: LocalStorage & Echo-Protected Cloud Push (Blocked until initialized!)
+  // STEP 2: LocalStorage & Echo-Protected Cloud Push
   useEffect(() => {
     try {
       localStorage.setItem('49habits_seq_level', JSON.stringify(currentLevel));
       localStorage.setItem('49habits_seq_checkins', JSON.stringify(activeCheckIns));
       localStorage.setItem('49habits_seq_mastered', JSON.stringify(masteredLevels));
 
-      // Block push if not initialized yet or if change came from remote broadcast
       if (!isInitializedRef.current) return;
 
       if (isRemoteUpdateRef.current) {
@@ -133,16 +154,15 @@ export default function App() {
         return;
       }
 
-      const currentStateStr = JSON.stringify({ currentLevel, activeCheckIns, masteredLevels });
-      // Only push if state actually changed from last state
+      const currentStateStr = JSON.stringify({ currentLevel, activeCheckIns, masteredLevels, theme });
       if (syncKey && currentStateStr !== lastStateStrRef.current) {
         lastStateStrRef.current = currentStateStr;
-        pushSupabaseData(syncKey, { currentLevel, activeCheckIns, masteredLevels });
+        pushSupabaseData(syncKey, { currentLevel, activeCheckIns, masteredLevels, theme });
       }
     } catch (e) {
       console.error('Storage sync error:', e);
     }
-  }, [currentLevel, activeCheckIns, masteredLevels, syncKey]);
+  }, [currentLevel, activeCheckIns, masteredLevels, theme, syncKey]);
 
   // STEP 3: Supabase Real-Time Listener
   useEffect(() => {
@@ -153,7 +173,8 @@ export default function App() {
         const incomingStateStr = JSON.stringify({
           currentLevel: newData.currentLevel,
           activeCheckIns: newData.activeCheckIns,
-          masteredLevels: newData.masteredLevels
+          masteredLevels: newData.masteredLevels,
+          theme: newData.theme || 'light'
         });
 
         if (incomingStateStr !== lastStateStrRef.current) {
@@ -163,6 +184,7 @@ export default function App() {
           if (newData.currentLevel) setCurrentLevel(newData.currentLevel);
           if (Array.isArray(newData.activeCheckIns)) setActiveCheckIns(newData.activeCheckIns);
           if (Array.isArray(newData.masteredLevels)) setMasteredLevels(newData.masteredLevels);
+          if (newData.theme) setTheme(newData.theme);
         }
       }
     });
@@ -239,14 +261,25 @@ export default function App() {
             49 Habits Journey
           </div>
         </div>
-        <button 
-          onClick={() => setShowSyncModal(true)}
-          className="header-mastered-badge"
-          style={{ cursor: 'pointer', border: 'none' }}
-          title="Account Sync Key"
-        >
-          {safeMastered.length}/49 Mastered
-        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            onClick={toggleTheme}
+            className="theme-toggle-btn"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {theme === 'dark' ? <Sun size={18} color="#f59e0b" /> : <Moon size={18} color="#64748b" />}
+          </button>
+
+          <button 
+            onClick={() => setShowSyncModal(true)}
+            className="header-mastered-badge"
+            style={{ cursor: 'pointer', border: 'none' }}
+            title="Account Sync Key"
+          >
+            {safeMastered.length}/49 Mastered
+          </button>
+        </div>
       </header>
 
       {/* Main Content Body */}
@@ -347,14 +380,13 @@ export default function App() {
                       className="task-card-row"
                       style={{ 
                         opacity: isLocked ? 0.65 : 1, 
-                        background: isActive ? '#f0fdf4' : '#ffffff',
                         borderColor: isActive ? '#10b981' : 'var(--border-card)',
                         padding: '16px'
                       }}
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <div style={{ fontWeight: 800, fontSize: '0.98rem', color: isActive ? '#059669' : 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.98rem', color: isActive ? '#10b981' : 'var(--text-primary)' }}>
                             Level {lvl.level}: {lvl.title}
                           </div>
                         </div>
@@ -367,7 +399,7 @@ export default function App() {
                         {isMastered && <span className="tag-pill tag-green">Mastered</span>}
                         {isActive && <span className="tag-pill tag-green">Active 🟢</span>}
                         {isLocked && (
-                          <span className="tag-pill" style={{ background: '#f1f5f9', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span className="tag-pill" style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Lock size={10} /> Locked
                           </span>
                         )}
@@ -409,7 +441,7 @@ export default function App() {
             </p>
 
             {syncKey && (
-              <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '10px', textAlign: 'center', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+              <div style={{ background: 'var(--bg-app)', padding: '10px 14px', borderRadius: '10px', textAlign: 'center', marginBottom: '16px', border: '1px solid var(--border-card)' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>CONNECTED SYNC KEY</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981', letterSpacing: '0.04em', marginTop: '2px' }}>
                   {syncKey}

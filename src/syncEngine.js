@@ -1,7 +1,6 @@
-// Supabase Real-Time Multi-Device Sync Engine
+// Supabase Real-Time Multi-Device Sync Engine with Theme Support
 import { supabase } from './supabaseClient';
 
-// Fetch latest habit data for a Sync Code from Supabase
 export const fetchSupabaseData = async (syncCode) => {
   if (!syncCode) return null;
   try {
@@ -16,12 +15,12 @@ export const fetchSupabaseData = async (syncCode) => {
       return null;
     }
 
-    // Unpack 49 Sequential Levels payload
     if (data.active_habit) {
       return {
         currentLevel: data.active_habit.currentLevel || 1,
         activeCheckIns: Array.isArray(data.active_habit.activeCheckIns) ? data.active_habit.activeCheckIns : [],
-        masteredLevels: Array.isArray(data.active_habit.masteredLevels) ? data.active_habit.masteredLevels : []
+        masteredLevels: Array.isArray(data.active_habit.masteredLevels) ? data.active_habit.masteredLevels : [],
+        theme: data.active_habit.theme || 'light'
       };
     }
     return null;
@@ -31,7 +30,6 @@ export const fetchSupabaseData = async (syncCode) => {
   }
 };
 
-// Push / Upsert habit data to Supabase by Sync Code
 export const pushSupabaseData = async (syncCode, payload) => {
   if (!syncCode) return;
   try {
@@ -42,7 +40,8 @@ export const pushSupabaseData = async (syncCode, payload) => {
         active_habit: {
           currentLevel: payload.currentLevel,
           activeCheckIns: payload.activeCheckIns,
-          masteredLevels: payload.masteredLevels
+          masteredLevels: payload.masteredLevels,
+          theme: payload.theme || 'light'
         },
         updated_at: new Date().toISOString()
       }, { onConflict: 'sync_code' });
@@ -55,7 +54,6 @@ export const pushSupabaseData = async (syncCode, payload) => {
   }
 };
 
-// Subscribe to Real-Time Supabase Changes for a Sync Code
 export const subscribeSupabaseRealtime = (syncCode, onUpdate) => {
   if (!syncCode) return () => {};
 
@@ -74,7 +72,8 @@ export const subscribeSupabaseRealtime = (syncCode, onUpdate) => {
           onUpdate({
             currentLevel: payload.new.active_habit.currentLevel || 1,
             activeCheckIns: Array.isArray(payload.new.active_habit.activeCheckIns) ? payload.new.active_habit.activeCheckIns : [],
-            masteredLevels: Array.isArray(payload.new.active_habit.masteredLevels) ? payload.new.active_habit.masteredLevels : []
+            masteredLevels: Array.isArray(payload.new.active_habit.masteredLevels) ? payload.new.active_habit.masteredLevels : [],
+            theme: payload.new.active_habit.theme || 'light'
           });
         }
       }
