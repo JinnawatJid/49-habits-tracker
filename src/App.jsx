@@ -62,9 +62,10 @@ export default function App() {
   const [showSyncModal, setShowSyncModal] = useState(!getInitialSyncKey());
   const [inputSyncKey, setInputSyncKey] = useState('');
 
-  // Flag to break infinite real-time echo feedback loops!
+  // Safeguard refs to eliminate initial-mount overwrite race conditions & real-time echo loops
+  const isInitializedRef = useRef(false);
   const isRemoteUpdateRef = useRef(false);
-  const lastPushedStateRef = useRef('');
+  const lastStateStrRef = useRef('');
 
   // Level Progress state
   const [currentLevel, setCurrentLevel] = useState(() => {
@@ -94,9 +95,10 @@ export default function App() {
     }
   });
 
-  // Load initial cloud data when syncKey changes
+  // STEP 1: On Mount or Sync Key Change -> Fetch Cloud Data BEFORE allowing any Pushes!
   useEffect(() => {
     if (!syncKey) return;
+    isInitializedRef.current = false;
 
     fetchSupabaseData(syncKey).then(cloudData => {
       if (cloudData) {
@@ -104,27 +106,37 @@ export default function App() {
         if (cloudData.currentLevel) setCurrentLevel(cloudData.currentLevel);
         if (Array.isArray(cloudData.activeCheckIns)) setActiveCheckIns(cloudData.activeCheckIns);
         if (Array.isArray(cloudData.masteredLevels)) setMasteredLevels(cloudData.masteredLevels);
+
+        lastStateStrRef.current = JSON.stringify({
+          currentLevel: cloudData.currentLevel || 1,
+          activeCheckIns: cloudData.activeCheckIns || [],
+          masteredLevels: cloudData.masteredLevels || []
+        });
       }
+      // Enable cloud pushing ONLY after initial fetch completes!
+      isInitializedRef.current = true;
     });
   }, [syncKey]);
 
-  // LocalStorage & Echo-Protected Supabase Push
+  // STEP 2: LocalStorage & Echo-Protected Cloud Push (Blocked until initialized!)
   useEffect(() => {
     try {
       localStorage.setItem('49habits_seq_level', JSON.stringify(currentLevel));
       localStorage.setItem('49habits_seq_checkins', JSON.stringify(activeCheckIns));
       localStorage.setItem('49habits_seq_mastered', JSON.stringify(masteredLevels));
 
-      // If state change was triggered by incoming remote broadcast, do NOT push back to Supabase!
+      // Block push if not initialized yet or if change came from remote broadcast
+      if (!isInitializedRef.current) return;
+
       if (isRemoteUpdateRef.current) {
         isRemoteUpdateRef.current = false;
         return;
       }
 
       const currentStateStr = JSON.stringify({ currentLevel, activeCheckIns, masteredLevels });
-      // Only push if state actually changed from last pushed state
-      if (syncKey && currentStateStr !== lastPushedStateRef.current) {
-        lastPushedStateRef.current = currentStateStr;
+      // Only push if state actually changed from last state
+      if (syncKey && currentStateStr !== lastStateStrRef.current) {
+        lastStateStrRef.current = currentStateStr;
         pushSupabaseData(syncKey, { currentLevel, activeCheckIns, masteredLevels });
       }
     } catch (e) {
@@ -132,7 +144,7 @@ export default function App() {
     }
   }, [currentLevel, activeCheckIns, masteredLevels, syncKey]);
 
-  // Supabase Real-Time Listener with Echo Safeguard
+  // STEP 3: Supabase Real-Time Listener
   useEffect(() => {
     if (!syncKey) return;
 
@@ -144,10 +156,9 @@ export default function App() {
           masteredLevels: newData.masteredLevels
         });
 
-        // Only update local React state if remote state is different from what we currently have
-        if (incomingStateStr !== lastPushedStateRef.current) {
+        if (incomingStateStr !== lastStateStrRef.current) {
           isRemoteUpdateRef.current = true;
-          lastPushedStateRef.current = incomingStateStr;
+          lastStateStrRef.current = incomingStateStr;
 
           if (newData.currentLevel) setCurrentLevel(newData.currentLevel);
           if (Array.isArray(newData.activeCheckIns)) setActiveCheckIns(newData.activeCheckIns);
@@ -169,15 +180,6 @@ export default function App() {
     const cleanKey = inputSyncKey.trim().toUpperCase();
     localStorage.setItem('49habits_sync_key', cleanKey);
     setSyncKey(cleanKey);
-
-    fetchSupabaseData(cleanKey).then(cloudData => {
-      if (cloudData) {
-        isRemoteUpdateRef.current = true;
-        if (cloudData.currentLevel) setCurrentLevel(cloudData.currentLevel);
-        if (Array.isArray(cloudData.activeCheckIns)) setActiveCheckIns(cloudData.activeCheckIns);
-        if (Array.isArray(cloudData.masteredLevels)) setMasteredLevels(cloudData.masteredLevels);
-      }
-    });
 
     setShowSyncModal(false);
     setInputSyncKey('');
