@@ -1,0 +1,271 @@
+/* Main Mobile Shell */
+.mobile-app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: 80px; /* Space for floating bottom nav */
+}
+
+/* Header */
+.app-header {
+  padding: 24px 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+}
+
+.header-date {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.header-mastered-badge {
+  background: #e6f4ea;
+  color: #137333;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Main Content Body */
+.main-content {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+}
+
+/* Hero 21-Day Challenge Card */
+.hero-challenge-card {
+  background: #ffffff;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px 20px;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hero-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hero-subtitle-tag {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.hero-day-pill {
+  background: #f1f5f9;
+  color: var(--text-primary);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.hero-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* 21-Circle Matrix Grid */
+.dot-matrix-21 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.dot-circle {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-card);
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dot-circle.completed {
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
+}
+
+.dot-circle.today-target {
+  border: 2px solid var(--accent-emerald);
+  background: var(--accent-emerald-bg);
+  color: var(--accent-emerald);
+}
+
+/* Check-In Button */
+.checkin-btn-balanced {
+  background-color: var(--accent-emerald);
+  color: #ffffff;
+  border: none;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.98rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.checkin-btn-balanced.checked {
+  background: #f1f5f9;
+  color: var(--accent-emerald);
+  border: 1px solid var(--accent-emerald-border);
+  box-shadow: none;
+}
+
+/* Today's Checklist Section */
+.section-heading {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.task-add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.task-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+}
+
+.task-checkbox-rounded {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.task-checkbox-rounded.checked {
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+}
+
+.task-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  margin: 0 12px;
+}
+
+.task-title.completed {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* Pastel Category Tag Pills */
+.tag-pill {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tag-green { background: #e6f4ea; color: #137333; }
+.tag-pink { background: #fce8e6; color: #c5221f; }
+.tag-yellow { background: #feefc3; color: #b06000; }
+.tag-blue { background: #e8f0fe; color: #1a73e8; }
+.tag-purple { background: #f3e8ff; color: #7e22ce; }
+
+/* Bottom Nav Bar */
+.bottom-nav-balanced {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: 66px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 50;
+}
+
+.nav-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px 24px;
+}
+
+.nav-tab-btn.active {
+  color: var(--text-primary);
+}
+
+.nav-tab-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-tab-btn.active .nav-tab-icon {
+  background: #0f172a;
+  color: #ffffff;
+}
