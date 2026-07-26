@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Check, Plus, Award, Compass, Trash2, CheckCircle2, 
-  Sparkles, Lock, Flame
+  Check, Award, Compass, CheckCircle2, Lock, Flame
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -32,7 +31,7 @@ const getOrGenerateSyncCode = () => {
   }
 };
 
-// 49 Sequential Levels Master Definition
+// 49 Sequential Levels Master Definition (Level 1 defined, 48 placeholders)
 const SEQUENTIAL_49_LEVELS = [
   {
     level: 1,
@@ -82,30 +81,18 @@ export default function App() {
     }
   });
 
-  const [todos, setTodos] = useState(() => {
-    try {
-      const saved = localStorage.getItem('49habits_seq_todos');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-
-  const [newTodoText, setNewTodoText] = useState('');
-
   // LocalStorage & Supabase Realtime Sync
   useEffect(() => {
     try {
       localStorage.setItem('49habits_seq_level', JSON.stringify(currentLevel));
       localStorage.setItem('49habits_seq_checkins', JSON.stringify(activeCheckIns));
       localStorage.setItem('49habits_seq_mastered', JSON.stringify(masteredLevels));
-      localStorage.setItem('49habits_seq_todos', JSON.stringify(todos));
 
-      pushSupabaseData(syncCode, { currentLevel, activeCheckIns, masteredLevels, todos });
+      pushSupabaseData(syncCode, { currentLevel, activeCheckIns, masteredLevels });
     } catch (e) {
       console.error('Storage sync error:', e);
     }
-  }, [currentLevel, activeCheckIns, masteredLevels, todos, syncCode]);
+  }, [currentLevel, activeCheckIns, masteredLevels, syncCode]);
 
   // Supabase Listener
   useEffect(() => {
@@ -114,7 +101,6 @@ export default function App() {
         if (newData.currentLevel) setCurrentLevel(newData.currentLevel);
         if (Array.isArray(newData.activeCheckIns)) setActiveCheckIns(newData.activeCheckIns);
         if (Array.isArray(newData.masteredLevels)) setMasteredLevels(newData.masteredLevels);
-        if (Array.isArray(newData.todos)) setTodos(newData.todos);
       }
     });
 
@@ -167,44 +153,7 @@ export default function App() {
     }
   };
 
-  // Add Task
-  const handleAddTodo = (e) => {
-    e.preventDefault();
-    if (!newTodoText.trim()) return;
-
-    const newItem = {
-      id: 't-' + Date.now(),
-      text: newTodoText.trim(),
-      completed: false
-    };
-
-    setTodos([newItem, ...(todos || [])]);
-    setNewTodoText('');
-  };
-
-  // Toggle Task
-  const toggleTodo = (id) => {
-    setTodos(prev => (prev || []).map(t => {
-      if (t.id === id) {
-        const nextState = !t.completed;
-        if (nextState) {
-          try {
-            confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
-          } catch (e) {}
-        }
-        return { ...t, completed: nextState };
-      }
-      return t;
-    }));
-  };
-
-  // Delete Task
-  const deleteTodo = (id) => {
-    setTodos(prev => (prev || []).filter(t => t.id !== id));
-  };
-
   const safeMastered = Array.isArray(masteredLevels) ? masteredLevels : [];
-  const safeTodos = Array.isArray(todos) ? todos : [];
 
   return (
     <div className="mobile-app-shell">
@@ -225,8 +174,8 @@ export default function App() {
       <main className="main-content">
         {activeTab === 'today' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Active Level 21-Day Challenge Card */}
-            <div className="hero-challenge-card animate-pop">
+            {/* Single 21-Day Habit Challenge Card (NO Today Checklist, NO task creation!) */}
+            <div className="hero-challenge-card animate-pop" style={{ margin: '12px 0' }}>
               <div className="hero-card-header">
                 <span className="hero-subtitle-tag" style={{ color: '#10b981', fontWeight: 700 }}>
                   LEVEL {currentLevel} ACTIVE
@@ -237,7 +186,7 @@ export default function App() {
               </div>
 
               <h2 className="hero-title">Level {currentLevel}: {activeLevelData.title}</h2>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
                 {activeLevelData.description}
               </p>
 
@@ -257,10 +206,11 @@ export default function App() {
                 })}
               </div>
 
-              {/* Check-In Button */}
+              {/* Single Check-In Button */}
               <button 
                 className={`checkin-btn-balanced ${isCheckedToday ? 'checked' : ''}`}
                 onClick={handleLevelCheckIn}
+                style={{ marginTop: '12px' }}
               >
                 {isCheckedToday ? (
                   <><CheckCircle2 size={18} /> Completed Today</>
@@ -268,57 +218,6 @@ export default function App() {
                   <><Check size={18} strokeWidth={3} /> Check-in Day {currentDayNum}</>
                 )}
               </button>
-            </div>
-
-            {/* Today's Checklist */}
-            <div>
-              <h3 className="section-heading">Today's Checklist</h3>
-
-              <form onSubmit={handleAddTodo} className="task-add-row">
-                <input 
-                  type="text" 
-                  className="input-balanced" 
-                  placeholder="Add a simple task..."
-                  value={newTodoText}
-                  onChange={(e) => setNewTodoText(e.target.value)}
-                />
-                <button type="submit" className="btn-emerald-solid" style={{ width: 'auto', padding: '0 18px' }}>
-                  <Plus size={20} />
-                </button>
-              </form>
-
-              <div>
-                {safeTodos.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-                    Your checklist is empty for today. Add a task above!
-                  </div>
-                ) : (
-                  safeTodos.map(item => (
-                    <div key={item.id} className="task-card-row">
-                      <div 
-                        className={`task-checkbox-rounded ${item.completed ? 'checked' : ''}`}
-                        onClick={() => toggleTodo(item.id)}
-                      >
-                        {item.completed && <Check size={14} color="white" strokeWidth={3} />}
-                      </div>
-
-                      <span 
-                        className={`task-title ${item.completed ? 'completed' : ''}`}
-                        onClick={() => toggleTodo(item.id)}
-                      >
-                        {item.text}
-                      </span>
-
-                      <button 
-                        onClick={() => deleteTodo(item.id)}
-                        style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', marginLeft: '8px' }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
           </div>
         ) : (
