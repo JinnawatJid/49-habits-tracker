@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Check, Plus, Award, Compass, Trash2, CheckCircle2, 
-  Sparkles, Flame
+  Sparkles, Lock, Flame
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
 import './App.css';
 
-// Helper functions for Real Calendar Date Engine
+// Real Calendar Date Helper
 const getTodayISO = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -16,12 +16,10 @@ const getTodayISO = () => {
   return `${year}-${month}-${day}`;
 };
 
-// Clean Human Date Header
 const getPolishedHeaderDate = () => {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 };
 
-// Generate initial Sync Code behind the scenes
 const getOrGenerateSyncCode = () => {
   try {
     const saved = localStorage.getItem('49habits_sync_code');
@@ -34,24 +32,50 @@ const getOrGenerateSyncCode = () => {
   }
 };
 
+// 49 Sequential Levels Master Definition
+const SEQUENTIAL_49_LEVELS = [
+  {
+    level: 1,
+    title: 'ออกไปรับอากาศบริสุทธิ์',
+    description: 'ใช้เวลานอกบ้านอย่างน้อยวันละ 30 นาที เพื่อรับวิตามินดี รับอากาศบริสุทธิ์ ช่วยให้สุขภาพและใจแข็งแรง',
+    isDefined: true
+  },
+  ...Array.from({ length: 48 }, (_, i) => ({
+    level: i + 2,
+    title: `Locked Habit (Chapter ${i + 2})`,
+    description: `Unlock by completing Level ${i + 1} (21/21 Days)`,
+    isDefined: false
+  }))
+];
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('today');
   const [todayISO, setTodayISO] = useState(getTodayISO());
   const [syncCode] = useState(getOrGenerateSyncCode());
 
-  // 100% Clean Production State (Zero Mock Data)
-  const [activeHabit, setActiveHabit] = useState(() => {
+  // Current Level Progress state (Default: Level 1)
+  const [currentLevel, setCurrentLevel] = useState(() => {
     try {
-      const saved = localStorage.getItem('49habits_clean_active');
-      return saved ? JSON.parse(saved) : null;
+      const saved = localStorage.getItem('49habits_seq_level');
+      return saved ? JSON.parse(saved) : 1;
     } catch (e) {
-      return null;
+      return 1;
     }
   });
 
-  const [masteredHabits, setMasteredHabits] = useState(() => {
+  // Active Habit Progress (Check-in dates array for current active level)
+  const [activeCheckIns, setActiveCheckIns] = useState(() => {
     try {
-      const saved = localStorage.getItem('49habits_clean_mastered');
+      const saved = localStorage.getItem('49habits_seq_checkins');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [masteredLevels, setMasteredLevels] = useState(() => {
+    try {
+      const saved = localStorage.getItem('49habits_seq_mastered');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -60,7 +84,7 @@ export default function App() {
 
   const [todos, setTodos] = useState(() => {
     try {
-      const saved = localStorage.getItem('49habits_clean_todos');
+      const saved = localStorage.getItem('49habits_seq_todos');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -68,26 +92,28 @@ export default function App() {
   });
 
   const [newTodoText, setNewTodoText] = useState('');
-  const [customHabitTitle, setCustomHabitTitle] = useState('');
 
-  // LocalStorage & Silent Supabase Sync
+  // LocalStorage & Supabase Realtime Sync
   useEffect(() => {
     try {
-      localStorage.setItem('49habits_clean_active', JSON.stringify(activeHabit));
-      localStorage.setItem('49habits_clean_mastered', JSON.stringify(masteredHabits));
-      localStorage.setItem('49habits_clean_todos', JSON.stringify(todos));
-      pushSupabaseData(syncCode, { activeHabit, masteredHabits, todos });
-    } catch (e) {
-      console.error('Storage/Sync error:', e);
-    }
-  }, [activeHabit, masteredHabits, todos, syncCode]);
+      localStorage.setItem('49habits_seq_level', JSON.stringify(currentLevel));
+      localStorage.setItem('49habits_seq_checkins', JSON.stringify(activeCheckIns));
+      localStorage.setItem('49habits_seq_mastered', JSON.stringify(masteredLevels));
+      localStorage.setItem('49habits_seq_todos', JSON.stringify(todos));
 
-  // Silent Supabase Real-Time Listener
+      pushSupabaseData(syncCode, { currentLevel, activeCheckIns, masteredLevels, todos });
+    } catch (e) {
+      console.error('Storage sync error:', e);
+    }
+  }, [currentLevel, activeCheckIns, masteredLevels, todos, syncCode]);
+
+  // Supabase Listener
   useEffect(() => {
     const unsubscribe = subscribeSupabaseRealtime(syncCode, (newData) => {
       if (newData) {
-        if (newData.active_habit !== undefined) setActiveHabit(newData.active_habit);
-        if (Array.isArray(newData.mastered_habits)) setMasteredHabits(newData.mastered_habits);
+        if (newData.currentLevel) setCurrentLevel(newData.currentLevel);
+        if (Array.isArray(newData.activeCheckIns)) setActiveCheckIns(newData.activeCheckIns);
+        if (Array.isArray(newData.masteredLevels)) setMasteredLevels(newData.masteredLevels);
         if (Array.isArray(newData.todos)) setTodos(newData.todos);
       }
     });
@@ -97,51 +123,46 @@ export default function App() {
     };
   }, [syncCode]);
 
-  // Calculations with safe optional chaining
-  const checkInDates = activeHabit && Array.isArray(activeHabit.checkInDates) ? activeHabit.checkInDates : [];
-  const isCheckedToday = checkInDates.includes(todayISO);
-  const completedCount = checkInDates.length;
-  const currentDayNum = isCheckedToday ? completedCount : completedCount + 1;
+  // Active level data
+  const activeLevelData = SEQUENTIAL_49_LEVELS.find(l => l.level === currentLevel) || SEQUENTIAL_49_LEVELS[0];
+  const isCheckedToday = activeCheckIns.includes(todayISO);
+  const completedDaysCount = activeCheckIns.length;
+  const currentDayNum = isCheckedToday ? completedDaysCount : completedDaysCount + 1;
 
-  // Handle Today's Check-In
-  const handleCheckInToday = () => {
-    if (!activeHabit) return;
-
+  // Handle Today's Level Check-In
+  const handleLevelCheckIn = () => {
     if (isCheckedToday) {
-      setActiveHabit(prev => ({
-        ...prev,
-        checkInDates: (prev?.checkInDates || []).filter(d => d !== todayISO)
-      }));
+      // Toggle OFF
+      setActiveCheckIns(prev => prev.filter(d => d !== todayISO));
     } else {
-      const updatedDates = [...checkInDates, todayISO];
+      // Toggle ON
+      const updatedDates = [...activeCheckIns, todayISO];
 
       try {
         confetti({
-          particleCount: 60,
-          spread: 70,
+          particleCount: 70,
+          spread: 80,
           origin: { y: 0.6 },
           colors: ['#10b981', '#3b82f6', '#f59e0b']
         });
       } catch (e) {}
 
+      // Reached 21/21 Days -> Level Up!
       if (updatedDates.length >= 21) {
-        alert(`🎉 CONGRATULATIONS! You completed all 21 Days of "${activeHabit.title}"!`);
+        alert(`🎉 CONGRATULATIONS! You completed Level ${currentLevel}: "${activeLevelData.title}"! Unlocking Level ${currentLevel + 1}!`);
 
-        const newMastered = {
-          id: 'm-' + Date.now(),
-          title: activeHabit.title,
+        const newMasteredItem = {
+          level: currentLevel,
+          title: activeLevelData.title,
           completedDate: 'Completed 21/21 Days',
-          tag: 'Mastered',
-          tagColor: 'tag-green'
+          date: todayISO
         };
 
-        setMasteredHabits([newMastered, ...(masteredHabits || [])]);
-        setActiveHabit(null);
+        setMasteredLevels([newMasteredItem, ...(masteredLevels || [])]);
+        setCurrentLevel(prev => prev + 1);
+        setActiveCheckIns([]);
       } else {
-        setActiveHabit(prev => ({
-          ...prev,
-          checkInDates: updatedDates
-        }));
+        setActiveCheckIns(updatedDates);
       }
     }
   };
@@ -154,8 +175,6 @@ export default function App() {
     const newItem = {
       id: 't-' + Date.now(),
       text: newTodoText.trim(),
-      tag: 'Task',
-      tagColor: 'tag-blue',
       completed: false
     };
 
@@ -184,40 +203,21 @@ export default function App() {
     setTodos(prev => (prev || []).filter(t => t.id !== id));
   };
 
-  // Create User's Custom 21-Day Challenge
-  const handleCreateCustomChallenge = (e) => {
-    e.preventDefault();
-    if (!customHabitTitle.trim()) return;
-
-    if (activeHabit && !window.confirm(`Start "${customHabitTitle.trim()}" as your active 21-Day Challenge?`)) {
-      return;
-    }
-
-    const newHabit = {
-      id: 'h-' + Date.now(),
-      title: customHabitTitle.trim(),
-      categoryTag: '21-Day Habit',
-      tagColor: 'tag-green',
-      startDate: todayISO,
-      checkInDates: [],
-      targetDays: 21
-    };
-
-    setActiveHabit(newHabit);
-    setCustomHabitTitle('');
-    setActiveTab('today');
-  };
-
-  const safeMastered = Array.isArray(masteredHabits) ? masteredHabits : [];
+  const safeMastered = Array.isArray(masteredLevels) ? masteredLevels : [];
   const safeTodos = Array.isArray(todos) ? todos : [];
 
   return (
     <div className="mobile-app-shell">
-      {/* Header matching approved mockup exactly */}
+      {/* Top Header */}
       <header className="app-header">
-        <h1 className="header-date">{getPolishedHeaderDate()}</h1>
+        <div>
+          <h1 className="header-date">{getPolishedHeaderDate()}</h1>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
+            49 Habits Journey
+          </div>
+        </div>
         <div className="header-mastered-badge">
-          {safeMastered.length} Habits Mastered
+          {safeMastered.length}/49 Mastered
         </div>
       </header>
 
@@ -225,59 +225,50 @@ export default function App() {
       <main className="main-content">
         {activeTab === 'today' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Hero 21-Day Challenge Card */}
-            {activeHabit ? (
-              <div className="hero-challenge-card animate-pop">
-                <div className="hero-card-header">
-                  <span className="hero-subtitle-tag">21-Day Challenge</span>
-                  <span className="hero-day-pill">
-                    Day {currentDayNum} of 21
-                  </span>
-                </div>
-
-                <h2 className="hero-title">{activeHabit.title}</h2>
-
-                {/* 21-Circle Matrix Grid */}
-                <div className="dot-matrix-21">
-                  {Array.from({ length: 21 }, (_, i) => i + 1).map((dayNum) => {
-                    const isCompleted = dayNum <= completedCount;
-                    const isTodayTarget = dayNum === completedCount + 1 && !isCheckedToday;
-                    return (
-                      <div 
-                        key={dayNum} 
-                        className={`dot-circle ${isCompleted ? 'completed' : ''} ${isTodayTarget ? 'today-target' : ''}`}
-                      >
-                        {isCompleted ? <Check size={12} strokeWidth={3} /> : ''}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Polished Button */}
-                <button 
-                  className={`checkin-btn-balanced ${isCheckedToday ? 'checked' : ''}`}
-                  onClick={handleCheckInToday}
-                >
-                  {isCheckedToday ? (
-                    <><CheckCircle2 size={18} /> Completed Today</>
-                  ) : (
-                    <><Check size={18} strokeWidth={3} /> Check-in Day {currentDayNum}</>
-                  )}
-                </button>
+            {/* Active Level 21-Day Challenge Card */}
+            <div className="hero-challenge-card animate-pop">
+              <div className="hero-card-header">
+                <span className="hero-subtitle-tag" style={{ color: '#10b981', fontWeight: 700 }}>
+                  LEVEL {currentLevel} ACTIVE
+                </span>
+                <span className="hero-day-pill">
+                  Day {currentDayNum} of 21
+                </span>
               </div>
-            ) : (
-              /* Clean Onboarding State */
-              <div className="hero-challenge-card animate-pop" style={{ textAlign: 'center', padding: '36px 20px' }}>
-                <Award size={40} color="#10b981" style={{ marginBottom: '12px' }} />
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Start Your 21-Day Journey</h3>
-                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: '8px 0 20px', lineHeight: 1.5 }}>
-                  Set your single habit challenge to transform your life over the next 21 days!
-                </p>
-                <button className="btn-emerald-solid" onClick={() => setActiveTab('journey')}>
-                  <Compass size={18} /> Create Your 21-Day Habit Challenge
-                </button>
+
+              <h2 className="hero-title">Level {currentLevel}: {activeLevelData.title}</h2>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
+                {activeLevelData.description}
+              </p>
+
+              {/* 21-Circle Matrix Grid */}
+              <div className="dot-matrix-21">
+                {Array.from({ length: 21 }, (_, i) => i + 1).map((dayNum) => {
+                  const isCompleted = dayNum <= completedDaysCount;
+                  const isTodayTarget = dayNum === completedDaysCount + 1 && !isCheckedToday;
+                  return (
+                    <div 
+                      key={dayNum} 
+                      className={`dot-circle ${isCompleted ? 'completed' : ''} ${isTodayTarget ? 'today-target' : ''}`}
+                    >
+                      {isCompleted ? <Check size={12} strokeWidth={3} /> : ''}
+                    </div>
+                  );
+                })}
               </div>
-            )}
+
+              {/* Check-In Button */}
+              <button 
+                className={`checkin-btn-balanced ${isCheckedToday ? 'checked' : ''}`}
+                onClick={handleLevelCheckIn}
+              >
+                {isCheckedToday ? (
+                  <><CheckCircle2 size={18} /> Completed Today</>
+                ) : (
+                  <><Check size={18} strokeWidth={3} /> Check-in Day {currentDayNum}</>
+                )}
+              </button>
+            </div>
 
             {/* Today's Checklist */}
             <div>
@@ -287,7 +278,7 @@ export default function App() {
                 <input 
                   type="text" 
                   className="input-balanced" 
-                  placeholder="Add a new task..."
+                  placeholder="Add a simple task..."
                   value={newTodoText}
                   onChange={(e) => setNewTodoText(e.target.value)}
                 />
@@ -298,8 +289,8 @@ export default function App() {
 
               <div>
                 {safeTodos.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '28px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-                    Your checklist is empty for today. Add a task above to get started!
+                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                    Your checklist is empty for today. Add a task above!
                   </div>
                 ) : (
                   safeTodos.map(item => (
@@ -331,61 +322,92 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* Tab 2: My Journey */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }} className="animate-pop">
+          /* Tab 2: Journey (Sequential 49 Levels Roadmap) */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-pop">
             <div>
               <h3 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Award size={20} color="#f59e0b" /> Mastered Habits ({safeMastered.length})
+                <Award size={20} color="#f59e0b" /> Mastered Levels ({safeMastered.length})
               </h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {safeMastered.length === 0 ? (
-                  <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
-                    Complete your first 21-day challenge to unlock your first trophy here!
+                  <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '16px' }}>
+                    Complete Level 1 (21/21 Days) to unlock your first trophy here!
                   </div>
                 ) : (
                   safeMastered.map(m => (
-                    <div key={m.id} className="task-card-row">
+                    <div key={m.level} className="task-card-row">
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#feefc3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
                         🏆
                       </div>
                       <div style={{ flex: 1, margin: '0 10px' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{m.title}</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                          Level {m.level}: {m.title}
+                        </div>
                         <div style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 600 }}>{m.completedDate}</div>
                       </div>
-                      <span className={`tag-pill ${m.tagColor || 'tag-green'}`}>{m.tag || 'Mastered'}</span>
+                      <span className="tag-pill tag-green">Mastered</span>
                     </div>
                   ))
                 )}
               </div>
             </div>
 
-            {/* Create Your 21-Day Habit Challenge */}
+            {/* 49 Levels Sequential Roadmap */}
             <div>
-              <h3 className="section-heading">Create 21-Day Habit Challenge</h3>
+              <h3 className="section-heading">49 Habits Levels Roadmap</h3>
 
-              <form onSubmit={handleCreateCustomChallenge} className="card-balanced" style={{ background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <label style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  What habit do you want to challenge yourself with for 21 days?
-                </label>
-                <input 
-                  type="text" 
-                  className="input-balanced" 
-                  placeholder="e.g. Read 10 pages daily"
-                  value={customHabitTitle}
-                  onChange={(e) => setCustomHabitTitle(e.target.value)}
-                  required
-                />
-                <button type="submit" className="btn-emerald-solid">
-                  Start 21-Day Challenge
-                </button>
-              </form>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {SEQUENTIAL_49_LEVELS.slice(0, 10).map((lvl) => {
+                  const isMastered = safeMastered.some(m => m.level === lvl.level);
+                  const isActive = lvl.level === currentLevel;
+                  const isLocked = lvl.level > currentLevel;
+
+                  return (
+                    <div 
+                      key={lvl.level} 
+                      className="task-card-row"
+                      style={{ 
+                        opacity: isLocked ? 0.65 : 1, 
+                        background: isActive ? '#f0fdf4' : '#ffffff',
+                        borderColor: isActive ? '#10b981' : 'var(--border-card)',
+                        padding: '16px'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.98rem', color: isActive ? '#059669' : 'var(--text-primary)' }}>
+                            Level {lvl.level}: {lvl.title}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                          {lvl.description}
+                        </div>
+                      </div>
+
+                      <div style={{ marginLeft: '12px', flexShrink: 0 }}>
+                        {isMastered && <span className="tag-pill tag-green">Mastered</span>}
+                        {isActive && <span className="tag-pill tag-green">Active 🟢</span>}
+                        {isLocked && (
+                          <span className="tag-pill" style={{ background: '#f1f5f9', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Lock size={10} /> Locked
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                  + 39 More Levels Locked (Chapters 11 to 49)
+                </div>
+              </div>
             </div>
           </div>
         )}
       </main>
 
-      {/* Bottom Nav Bar - STRICTLY 2 TABS matching approved mockup */}
+      {/* Bottom Nav Bar */}
       <nav className="bottom-nav-balanced">
         <button 
           className={`nav-tab-btn ${activeTab === 'today' ? 'active' : ''}`}
