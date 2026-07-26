@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Check, Plus, Award, Compass, Trash2, CheckCircle2, 
-  Sparkles, Calendar, Flame, RefreshCw, Link2, Smartphone, Monitor
+  Sparkles, Calendar, Flame, RefreshCw, Link2, Database
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
 import './App.css';
 
 // Helper functions for Real Calendar Date Engine
@@ -98,14 +99,28 @@ export default function App() {
   const [newTodoText, setNewTodoText] = useState('');
   const [customHabitTitle, setCustomHabitTitle] = useState('');
 
-  // LocalStorage Persistence
+  // LocalStorage & Supabase Sync
   useEffect(() => {
     localStorage.setItem('49habits_v3_active', JSON.stringify(activeHabit));
     localStorage.setItem('49habits_v3_mastered', JSON.stringify(masteredHabits));
     localStorage.setItem('49habits_v3_todos', JSON.stringify(todos));
-  }, [activeHabit, masteredHabits, todos]);
 
-  // Handle Multi-Device Sync Pairing
+    // Push state update to Supabase Cloud
+    pushSupabaseData(syncCode, { activeHabit, masteredHabits, todos });
+  }, [activeHabit, masteredHabits, todos, syncCode]);
+
+  // Supabase Real-Time Listener
+  useEffect(() => {
+    const unsubscribe = subscribeSupabaseRealtime(syncCode, (newData) => {
+      if (newData.active_habit !== undefined) setActiveHabit(newData.active_habit);
+      if (newData.mastered_habits) setMasteredHabits(newData.mastered_habits);
+      if (newData.todos) setTodos(newData.todos);
+    });
+
+    return () => unsubscribe();
+  }, [syncCode]);
+
+  // Handle Multi-Device Supabase Sync Pairing
   const handlePairDevice = (e) => {
     e.preventDefault();
     if (!inputSyncCode.trim()) return;
@@ -113,9 +128,19 @@ export default function App() {
     const formattedCode = inputSyncCode.trim().toUpperCase();
     localStorage.setItem('49habits_sync_code', formattedCode);
     setSyncCode(formattedCode);
+
+    // Fetch initial Supabase data for the paired code
+    fetchSupabaseData(formattedCode).then(cloudData => {
+      if (cloudData) {
+        if (cloudData.active_habit !== undefined) setActiveHabit(cloudData.active_habit);
+        if (cloudData.mastered_habits) setMasteredHabits(cloudData.mastered_habits);
+        if (cloudData.todos) setTodos(cloudData.todos);
+      }
+    });
+
     setShowSyncModal(false);
     setInputSyncCode('');
-    alert(`Device successfully linked to Sync Code: ${formattedCode}! All progress will now sync automatically.`);
+    alert(`Device paired to Supabase Sync Code: ${formattedCode}! All progress will now sync in real time.`);
   };
 
   // Calculations
@@ -236,7 +261,7 @@ export default function App() {
 
   return (
     <div className="mobile-app-shell">
-      {/* Polished Top Header with Multi-Device Sync Indicator */}
+      {/* Top Header with Supabase Sync Code */}
       <header className="app-header">
         <div>
           <h1 className="header-date">{getPolishedHeaderDate()}</h1>
@@ -244,11 +269,11 @@ export default function App() {
             onClick={() => setShowSyncModal(true)}
             style={{ background: 'none', border: 'none', color: '#10b981', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}
           >
-            <Link2 size={12} /> Sync Code: {syncCode}
+            <Database size={12} /> Supabase Sync: {syncCode}
           </button>
         </div>
         <div className="header-mastered-badge">
-          {masteredHabits.length} Mastered
+          {masteredHabits.length} Habits Mastered
         </div>
       </header>
 
@@ -458,17 +483,17 @@ export default function App() {
         )}
       </main>
 
-      {/* Multi-Device Sync Modal */}
+      {/* Supabase Multi-Device Sync Modal */}
       {showSyncModal && (
         <div className="modal-overlay" onClick={() => setShowSyncModal(false)}>
           <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <Link2 size={24} color="#10b981" />
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Pair Another Device</h2>
+              <Database size={24} color="#10b981" />
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Supabase Multi-Device Sync</h2>
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Enter your Sync Code on your phone, tablet, or laptop to sync your 21-day progress automatically across devices!
+              Enter your Sync Code on your phone, tablet, or laptop to pair your devices via Supabase real-time cloud sync!
             </p>
 
             <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '12px', textAlign: 'center', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
@@ -489,7 +514,7 @@ export default function App() {
                 style={{ textTransform: 'uppercase' }}
                 required
               />
-              <button type="submit" className="btn-emerald-solid">Pair Devices Now</button>
+              <button type="submit" className="btn-emerald-solid">Pair Devices via Supabase</button>
               <button type="button" className="btn-secondary" style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => setShowSyncModal(false)}>
                 Cancel
               </button>

@@ -1,39 +1,68 @@
-// Frictionless Multi-Device Sync Engine using Cloud Key-Value API
+// Supabase Real-Time Multi-Device Sync Engine
+import { supabase } from './supabaseClient';
 
-const SYNC_API_ENDPOINT = 'https://api.jsonbin.io/v3/b'; // Or free public KV store
+// Fetch latest habit data for a Sync Code from Supabase
+export const fetchSupabaseData = async (syncCode) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_habits')
+      .select('*')
+      .eq('sync_code', syncCode)
+      .single();
 
-// Generate a clean 6-character Sync Code (e.g. "HABIT-742")
-export const generateSyncCode = () => {
-  const randomNum = Math.floor(100 + Math.random() * 900);
-  return `HABIT-${randomNum}`;
+    if (error) {
+      console.log('Supabase fetch notice:', error.message);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.log('Supabase fetch exception:', e);
+    return null;
+  }
 };
 
-// Fetch data from Cloud by Sync Code
-export const fetchCloudData = async (syncCode) => {
+// Push / Upsert habit data to Supabase by Sync Code
+export const pushSupabaseData = async (syncCode, payload) => {
   try {
-    const response = await fetch(`https://kv.valkey.dev/get/${syncCode}`, {
-      headers: { 'Accept': 'application/json' }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      return data;
+    const { error } = await supabase
+      .from('user_habits')
+      .upsert({
+        sync_code: syncCode,
+        active_habit: payload.activeHabit,
+        mastered_habits: payload.masteredHabits,
+        todos: payload.todos,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'sync_code' });
+
+    if (error) {
+      console.log('Supabase upsert notice:', error.message);
     }
   } catch (e) {
-    // Graceful fallback if offline
-    console.log('Offline or sync fallback:', e);
+    console.log('Supabase push exception:', e);
   }
-  return null;
 };
 
-// Save data to Cloud by Sync Code
-export const pushCloudData = async (syncCode, payload) => {
-  try {
-    await fetch(`https://kv.valkey.dev/set/${syncCode}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    console.log('Offline push fallback:', e);
-  }
+// Subscribe to Real-Time Supabase Changes for a Sync Code
+export const subscribeSupabaseRealtime = (syncCode, onUpdate) => {
+  const channel = supabase
+    .channel(`realtime:user_habits:${syncCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'user_habits',
+        filter: `sync_code=eq.${syncCode}`
+      },
+      (payload) => {
+        if (payload.new) {
+          onUpdate(payload.new);
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 };
