@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/gold-price",
+      "destination": "https://thai-gold-api.vercel.app/latest"
+    }
   ]
 }

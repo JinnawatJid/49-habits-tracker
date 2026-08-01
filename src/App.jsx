@@ -161,39 +161,12 @@ export default function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // CORS-Safe Live Real-Time Gold Price Fetcher
+  // Same-Origin Proxy Live Real-Time Gold Price Fetcher
   const fetchLiveGoldPrice = async () => {
     setIsLiveLoading(true);
-
-    // Strategy 1: Use AllOrigins CORS Proxy to fetch GoldTraders Association official page
     try {
-      const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://www.goldtraders.or.th/');
-      const res = await fetch(proxyUrl);
-      if (res.ok) {
-        const json = await res.json();
-        if (json && json.contents) {
-          // Parse HTML for Gold Bar Sell Price
-          const match = json.contents.match(/DetailList_lblBLSell">([0-9,]+)/i);
-          if (match && match[1]) {
-            const cleanPrice = Number(match[1].replace(/,/g, ''));
-            if (cleanPrice > 30000) {
-              setGoldSpotPricePerBaht(cleanPrice);
-              const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-              setLastSpotUpdatedTime(nowTime);
-              setIsLiveLoading(false);
-              return;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // Silent catch
-    }
-
-    // Strategy 2: Use CORS Proxy for Thai Gold API
-    try {
-      const corsProxy = 'https://corsproxy.io/?' + encodeURIComponent('https://thai-gold-api.vercel.app/latest');
-      const res = await fetch(corsProxy);
+      // Same-origin rewrite proxy endpoint (/api/gold-price)
+      const res = await fetch('/api/gold-price');
       if (res.ok) {
         const data = await res.json();
         if (data && data.response && data.response.price && data.response.price.gold_bar) {
