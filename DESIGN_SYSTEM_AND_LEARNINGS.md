@@ -19,30 +19,35 @@
 ### Universal Accents & Layout Structure
 * **Action Accent**: Emerald Green (`#10B981`, Hover: `#059669`)
 * **Trophy Accent**: Warm Amber (`#F59E0B`)
-* **Sprint Matrix**: Single horizontal row of 7 circles (`Day 1` to `Day 7`) replacing the 21-dot grid.
-* **Layout Structure**: Strictly 2 Bottom Tabs (`Today` and `Journey`).
+* **Sprint Matrix**: Single horizontal row of 7 circles (`Day 1` to `Day 7`).
+* **Layout Structure**: Strictly 3 Bottom Tabs (`Today` | `Journey` | `Gold DCA`).
 
 ---
 
 ## 2. Mandatory Learned Behavioral Rules
 
-### Rule 1: Visual Wireframe Approval First
+### Rule 1: Unified Natural English Typography (No Mixed Languages or Parentheses)
+* All UI labels, badges, headers, metrics, and cards must use **100% Unified Natural English Typography** (e.g. `PORTFOLIO VALUE`, `Total Invested`, `Gold Accumulated`, `Average Cost`, `Gold Spot Reference`).
+* **Zero Parenthetical Clutter**: Never use parenthetical translations `(มูลค่าปัจจุบัน)` or mixed Thai/English labels cluttering cards.
+
+### Rule 2: Crisp Lucide SVG Vector Icons Only (Zero OS Emojis)
+* All icons must be clean Lucide SVG vector components (`<Coins />`, `<Award />`, `<CheckCircle2 />`, `<Plus />`, `<Lock />`, `<KeyRound />`). Never use clunky OS browser emojis (`🪙`, `🏆`, `🟢`).
+
+### Rule 3: Visual Wireframe Approval First
 * **NEVER add or alter UI elements, buttons, or navigation layouts** without first generating a visual wireframe mockup (via Stitch / `generate_image`), presenting it to the user, and receiving explicit approval.
 
-### Rule 2: Production Polish & Zero Mock Data Policy
-* **Never display developer debug text** (e.g. `"Real Calendar Date • 2026-07-26"`, `"Supabase Sync: HABIT-XXXX"`) or pre-populated dummy lists cluttering the interface. Keep all UI clean and production-ready.
+### Rule 4: Production Polish & Zero Mock Data Policy
+* Keep all UI clean and free of developer debug text or unrequested dummy lists.
 
-### Rule 3: Real-Time Sync Race-Condition Safeguards
+### Rule 5: Real-Time Sync Race-Condition Safeguards
 * **Mount Overwrite Prevention**: Always block cloud push operations on app mount until initial cloud state fetch completes (`isInitializedRef`).
 * **Echo Loop Prevention**: Always implement remote-update flags (`isRemoteUpdateRef`) and deep state comparison (`lastStateStrRef`) to prevent incoming real-time broadcasts from re-triggering outgoing pushes in an infinite loop.
-
-### Rule 4: Git Profile Enforcement
-* All personal project commits must be pushed to personal GitHub account **`JinnawatJid`**. Run `gh auth switch --user JinnawatJid` if active account defaults to work profile.
 
 ---
 
 ## 3. Technology Architecture
 * **Sprint Engine**: 7-Day Micro-Habit Sprint Model (7 days per level to level up).
+* **Gold Portfolio Engine**: Real-time Gold DCA Portfolio Tracker (Capital spent, gold weight, physical bars, average cost, profit/loss).
 * **Frontend**: React 19 + Vite 8
 * **Database & Realtime**: Supabase Real-Time Key-Value Store (`user_habits` table) with Single-Field Private Sync Key authentication (`Jinna-2026`).
 * **Themes**: Dynamic Light / Dark mode toggle with persistent `data-theme` attribute and Supabase sync.
