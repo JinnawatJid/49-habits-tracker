@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun
+  Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
+  Coins, Plus, Trash2, TrendingUp, DollarSign, Scale
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -34,7 +35,7 @@ const getInitialSyncKey = () => {
     if (saved) return saved;
 
     return null;
-  } catch {
+  } catch (e) {
     return null;
   }
 };
@@ -67,13 +68,6 @@ const SEQUENTIAL_49_LEVELS = [
 export default function App() {
   const [activeTab, setActiveTab] = useState('today');
   const [todayISO] = useState(getTodayISO());
-
-  // Memoize polished header date representation to optimize CPU performance and prevent redundant calculations.
-  const polishedHeaderDate = React.useMemo(() => {
-    // Explicitly use todayISO to satisfy dependency linting and ensure fresh calculation on day transition.
-    return todayISO ? getPolishedHeaderDate() : getPolishedHeaderDate();
-  }, [todayISO]);
-
   const [syncKey, setSyncKey] = useState(getInitialSyncKey());
   const [showSyncModal, setShowSyncModal] = useState(!getInitialSyncKey());
   const [inputSyncKey, setInputSyncKey] = useState('');
@@ -83,7 +77,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('49habits_theme');
       return saved ? saved : 'light';
-    } catch {
+    } catch (e) {
       return 'light';
     }
   });
@@ -93,12 +87,12 @@ export default function App() {
   const isRemoteUpdateRef = useRef(false);
   const lastStateStrRef = useRef('');
 
-  // Level Progress state (Default: Level 1)
+  // Level Progress state
   const [currentLevel, setCurrentLevel] = useState(() => {
     try {
       const saved = localStorage.getItem('49habits_seq_level');
       return saved ? JSON.parse(saved) : 1;
-    } catch {
+    } catch (e) {
       return 1;
     }
   });
@@ -107,7 +101,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('49habits_seq_checkins');
       return saved ? JSON.parse(saved) : [];
-    } catch {
+    } catch (e) {
       return [];
     }
   });
@@ -116,10 +110,35 @@ export default function App() {
     try {
       const saved = localStorage.getItem('49habits_seq_mastered');
       return saved ? JSON.parse(saved) : [];
-    } catch {
+    } catch (e) {
       return [];
     }
   });
+
+  // Gold DCA State
+  const [goldTransactions, setGoldTransactions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('49habits_gold_txs');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Gold Spot Price per Baht Gold (1 Baht = 15.244g)
+  const [goldSpotPricePerBaht, setGoldSpotPricePerBaht] = useState(() => {
+    try {
+      const saved = localStorage.getItem('49habits_gold_spot');
+      return saved ? Number(saved) : 41500;
+    } catch (e) {
+      return 41500;
+    }
+  });
+
+  const [showGoldModal, setShowGoldModal] = useState(false);
+  const [inputGoldTHB, setInputGoldTHB] = useState('');
+  const [inputGoldGrams, setInputGoldGrams] = useState('0.1');
+  const [inputIsPhysicalBar, setInputIsPhysicalBar] = useState(true);
 
   // Apply theme data attribute
   useEffect(() => {
@@ -143,12 +162,14 @@ export default function App() {
         if (Array.isArray(cloudData.activeCheckIns)) setActiveCheckIns(cloudData.activeCheckIns);
         if (Array.isArray(cloudData.masteredLevels)) setMasteredLevels(cloudData.masteredLevels);
         if (cloudData.theme) setTheme(cloudData.theme);
+        if (Array.isArray(cloudData.goldTransactions)) setGoldTransactions(cloudData.goldTransactions);
 
         lastStateStrRef.current = JSON.stringify({
           currentLevel: cloudData.currentLevel || 1,
           activeCheckIns: cloudData.activeCheckIns || [],
           masteredLevels: cloudData.masteredLevels || [],
-          theme: cloudData.theme || 'light'
+          theme: cloudData.theme || 'light',
+          goldTransactions: cloudData.goldTransactions || []
         });
       }
       isInitializedRef.current = true;
@@ -161,6 +182,8 @@ export default function App() {
       localStorage.setItem('49habits_seq_level', JSON.stringify(currentLevel));
       localStorage.setItem('49habits_seq_checkins', JSON.stringify(activeCheckIns));
       localStorage.setItem('49habits_seq_mastered', JSON.stringify(masteredLevels));
+      localStorage.setItem('49habits_gold_txs', JSON.stringify(goldTransactions));
+      localStorage.setItem('49habits_gold_spot', goldSpotPricePerBaht.toString());
 
       if (!isInitializedRef.current) return;
 
@@ -169,15 +192,15 @@ export default function App() {
         return;
       }
 
-      const currentStateStr = JSON.stringify({ currentLevel, activeCheckIns, masteredLevels, theme });
+      const currentStateStr = JSON.stringify({ currentLevel, activeCheckIns, masteredLevels, theme, goldTransactions });
       if (syncKey && currentStateStr !== lastStateStrRef.current) {
         lastStateStrRef.current = currentStateStr;
-        pushSupabaseData(syncKey, { currentLevel, activeCheckIns, masteredLevels, theme });
+        pushSupabaseData(syncKey, { currentLevel, activeCheckIns, masteredLevels, theme, goldTransactions });
       }
     } catch (e) {
       console.error('Storage sync error:', e);
     }
-  }, [currentLevel, activeCheckIns, masteredLevels, theme, syncKey]);
+  }, [currentLevel, activeCheckIns, masteredLevels, theme, goldTransactions, goldSpotPricePerBaht, syncKey]);
 
   // STEP 3: Supabase Real-Time Listener
   useEffect(() => {
@@ -189,7 +212,8 @@ export default function App() {
           currentLevel: newData.currentLevel,
           activeCheckIns: newData.activeCheckIns,
           masteredLevels: newData.masteredLevels,
-          theme: newData.theme || 'light'
+          theme: newData.theme || 'light',
+          goldTransactions: newData.goldTransactions || []
         });
 
         if (incomingStateStr !== lastStateStrRef.current) {
@@ -200,6 +224,7 @@ export default function App() {
           if (Array.isArray(newData.activeCheckIns)) setActiveCheckIns(newData.activeCheckIns);
           if (Array.isArray(newData.masteredLevels)) setMasteredLevels(newData.masteredLevels);
           if (newData.theme) setTheme(newData.theme);
+          if (Array.isArray(newData.goldTransactions)) setGoldTransactions(newData.goldTransactions);
         }
       }
     });
@@ -222,6 +247,55 @@ export default function App() {
     setInputSyncKey('');
   };
 
+  // Log New Gold DCA Purchase
+  const handleAddGoldTransaction = (e) => {
+    e.preventDefault();
+    const thb = Number(inputGoldTHB);
+    const grams = Number(inputGoldGrams);
+
+    if (isNaN(thb) || thb <= 0 || isNaN(grams) || grams <= 0) return;
+
+    const newTx = {
+      id: 'gt-' + Date.now(),
+      date: getTodayISO(),
+      amountTHB: thb,
+      weightGrams: grams,
+      isPhysicalBar: inputIsPhysicalBar
+    };
+
+    setGoldTransactions([newTx, ...goldTransactions]);
+    setInputGoldTHB('');
+    setInputGoldGrams('0.1');
+    setShowGoldModal(false);
+
+    try {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#f59e0b', '#10b981', '#fbbf24']
+      });
+    } catch (err) {}
+  };
+
+  // Delete Gold Transaction
+  const handleDeleteGoldTx = (id) => {
+    setGoldTransactions(prev => prev.filter(tx => tx.id !== id));
+  };
+
+  // Calculations for Gold DCA Portfolio
+  const safeGoldTxs = Array.isArray(goldTransactions) ? goldTransactions : [];
+  const totalSpentTHB = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.amountTHB) || 0), 0);
+  const totalWeightGrams = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.weightGrams) || 0), 0);
+  const totalBahtGold = totalWeightGrams / 15.244;
+  const avgCostPerGram = totalWeightGrams > 0 ? (totalSpentTHB / totalWeightGrams) : 0;
+  const avgCostPerBaht = avgCostPerGram * 15.244;
+
+  const currentMarketValueTHB = totalWeightGrams * (goldSpotPricePerBaht / 15.244);
+  const netProfitTHB = currentMarketValueTHB - totalSpentTHB;
+  const netProfitPercent = totalSpentTHB > 0 ? ((netProfitTHB / totalSpentTHB) * 100) : 0;
+  const physicalBarsCount = safeGoldTxs.filter(tx => tx.isPhysicalBar).length;
+
   // Active level data & 7-Day Sprint math
   const activeLevelData = SEQUENTIAL_49_LEVELS.find(l => l.level === currentLevel) || SEQUENTIAL_49_LEVELS[0];
   const targetDays = activeLevelData.targetDays || 7;
@@ -243,7 +317,7 @@ export default function App() {
           origin: { y: 0.6 },
           colors: ['#10b981', '#3b82f6', '#f59e0b']
         });
-      } catch {}
+      } catch (e) {}
 
       // Reached 7/7 Days -> Level Up!
       if (updatedDates.length >= targetDays) {
@@ -272,9 +346,9 @@ export default function App() {
       {/* Top Header */}
       <header className="app-header">
         <div>
-          <h1 className="header-date">{polishedHeaderDate}</h1>
+          <h1 className="header-date">{getPolishedHeaderDate()}</h1>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
-            49 Habits Journey
+            {activeTab === 'gold' ? 'Gold DCA Portfolio 🪙' : '49 Habits Journey'}
           </div>
         </div>
 
@@ -348,7 +422,7 @@ export default function App() {
               </button>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'journey' ? (
           /* Tab 2: Journey */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-pop">
             <div>
@@ -430,8 +504,190 @@ export default function App() {
               </div>
             </div>
           </div>
+        ) : (
+          /* Tab 3: Gold DCA Portfolio Tracker */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-pop">
+            {/* Portfolio Summary Hero Card */}
+            <div className="hero-challenge-card" style={{ margin: 0, padding: '22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    CURRENT MARKET VALUE (มูลค่าปัจจุบัน)
+                  </div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+                    {currentMarketValueTHB.toLocaleString('en-US', { maximumFractionDigits: 0 })} <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-secondary)' }}>THB</span>
+                  </div>
+                </div>
+
+                <div className="tag-pill tag-green" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 700 }}>
+                  <TrendingUp size={14} />
+                  {netProfitTHB >= 0 ? '+' : ''}{netProfitTHB.toLocaleString('en-US', { maximumFractionDigits: 0 })} THB ({netProfitPercent >= 0 ? '+' : ''}{netProfitPercent.toFixed(1)}%)
+                </div>
+              </div>
+
+              {/* Key Metrics Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', paddingTop: '16px', borderTop: '1px solid var(--border-card)' }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>ต้นทุนรวม</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                    {totalSpentTHB.toLocaleString()} THB
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>ทองคำสะสม</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
+                    {totalWeightGrams.toFixed(2)} g
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
+                    {physicalBarsCount}x 0.1g Bars 🪙
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>ต้นทุนเฉลี่ย</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                    {avgCostPerGram.toLocaleString('en-US', { maximumFractionDigits: 0 })} THB/g
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Log Buy Button */}
+            <button 
+              className="btn-emerald-solid"
+              onClick={() => setShowGoldModal(true)}
+              style={{ height: '48px', fontSize: '0.98rem' }}
+            >
+              <Plus size={20} /> Log Gold DCA Buy
+            </button>
+
+            {/* Gold Spot Price Setting */}
+            <div className="card-balanced" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                ราคาทองแท่งอ้างอิง:
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input 
+                  type="number"
+                  className="input-balanced"
+                  value={goldSpotPricePerBaht}
+                  onChange={(e) => setGoldSpotPricePerBaht(Number(e.target.value))}
+                  style={{ width: '110px', height: '34px', padding: '0 8px', textAlign: 'right', fontWeight: 700 }}
+                />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>THB/บาท</span>
+              </div>
+            </div>
+
+            {/* Recent Purchases & Physical Bars History */}
+            <div>
+              <h3 className="section-heading">Recent Purchases & 0.1g Bars</h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {safeGoldTxs.length === 0 ? (
+                  <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '24px' }}>
+                    No gold purchases logged yet. Click "+ Log Gold DCA Buy" above to start tracking!
+                  </div>
+                ) : (
+                  safeGoldTxs.map(tx => (
+                    <div key={tx.id} className="task-card-row">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#feefc3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                          🪙
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                            {Number(tx.amountTHB).toLocaleString()} THB → {Number(tx.weightGrams).toFixed(2)} g Gold
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                            {tx.date} {tx.isPhysicalBar && '• Physical 0.1g Bar 🪙'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={() => handleDeleteGoldTx(tx.id)}
+                        style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', marginLeft: '8px' }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </main>
+
+      {/* Log Gold DCA Buy Modal */}
+      {showGoldModal && (
+        <div className="modal-overlay" onClick={() => setShowGoldModal(false)}>
+          <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Coins size={22} color="#f59e0b" />
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Log Gold DCA Purchase</h2>
+              </div>
+              <button 
+                onClick={() => setShowGoldModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddGoldTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                  Money Spent (จำนวนเงินที่ซื้อ THB):
+                </label>
+                <input 
+                  type="number" 
+                  className="input-balanced"
+                  placeholder="e.g. 500"
+                  value={inputGoldTHB}
+                  onChange={(e) => setInputGoldTHB(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                  Gold Weight Received (น้ำหนักทองคำที่ได้ Grams):
+                </label>
+                <input 
+                  type="number"
+                  step="0.01" 
+                  className="input-balanced"
+                  placeholder="e.g. 0.1"
+                  value={inputGoldGrams}
+                  onChange={(e) => setInputGoldGrams(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0' }}>
+                <input 
+                  type="checkbox"
+                  id="physicalBarCheck"
+                  checked={inputIsPhysicalBar}
+                  onChange={(e) => setInputIsPhysicalBar(e.target.checked)}
+                  style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }}
+                />
+                <label htmlFor="physicalBarCheck" style={{ fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                  Redeemed to Physical 0.1g Bar 🪙
+                </label>
+              </div>
+
+              <button type="submit" className="btn-emerald-solid" style={{ height: '46px', marginTop: '4px' }}>
+                Save Gold DCA Transaction
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Single Field Private Sync Key Modal */}
       {showSyncModal && (
@@ -453,7 +709,7 @@ export default function App() {
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
-              Enter your private sync key (e.g. <strong>Jinna-2026</strong>) to sync your 7-day sprint progress across all your devices!
+              Enter your private sync key (e.g. <strong>Jinna-2026</strong>) to sync your 7-day sprint & gold DCA portfolio across all your devices!
             </p>
 
             {syncKey && (
@@ -485,7 +741,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Bottom Nav Bar */}
+      {/* Bottom Nav Bar (3 Tabs) */}
       <nav className="bottom-nav-balanced">
         <button 
           className={`nav-tab-btn ${activeTab === 'today' ? 'active' : ''}`}
@@ -505,6 +761,16 @@ export default function App() {
             <Compass size={18} />
           </div>
           <span>Journey</span>
+        </button>
+
+        <button 
+          className={`nav-tab-btn ${activeTab === 'gold' ? 'active' : ''}`}
+          onClick={() => setActiveTab('gold')}
+        >
+          <div className="nav-tab-icon">
+            <Coins size={18} />
+          </div>
+          <span>Gold DCA</span>
         </button>
       </nav>
     </div>

@@ -1,4 +1,4 @@
-// Supabase Real-Time Multi-Device Sync Engine with Theme Support
+// Supabase Real-Time Multi-Device Sync Engine with Theme & Gold DCA Support
 import { supabase } from './supabaseClient';
 
 export const fetchSupabaseData = async (syncCode) => {
@@ -20,7 +20,8 @@ export const fetchSupabaseData = async (syncCode) => {
         currentLevel: data.active_habit.currentLevel || 1,
         activeCheckIns: Array.isArray(data.active_habit.activeCheckIns) ? data.active_habit.activeCheckIns : [],
         masteredLevels: Array.isArray(data.active_habit.masteredLevels) ? data.active_habit.masteredLevels : [],
-        theme: data.active_habit.theme || 'light'
+        theme: data.active_habit.theme || 'light',
+        goldTransactions: Array.isArray(data.active_habit.goldTransactions) ? data.active_habit.goldTransactions : []
       };
     }
     return null;
@@ -41,7 +42,8 @@ export const pushSupabaseData = async (syncCode, payload) => {
           currentLevel: payload.currentLevel,
           activeCheckIns: payload.activeCheckIns,
           masteredLevels: payload.masteredLevels,
-          theme: payload.theme || 'light'
+          theme: payload.theme || 'light',
+          goldTransactions: payload.goldTransactions || []
         },
         updated_at: new Date().toISOString()
       }, { onConflict: 'sync_code' });
@@ -73,7 +75,8 @@ export const subscribeSupabaseRealtime = (syncCode, onUpdate) => {
             currentLevel: payload.new.active_habit.currentLevel || 1,
             activeCheckIns: Array.isArray(payload.new.active_habit.activeCheckIns) ? payload.new.active_habit.activeCheckIns : [],
             masteredLevels: Array.isArray(payload.new.active_habit.masteredLevels) ? payload.new.active_habit.masteredLevels : [],
-            theme: payload.new.active_habit.theme || 'light'
+            theme: payload.new.active_habit.theme || 'light',
+            goldTransactions: Array.isArray(payload.new.active_habit.goldTransactions) ? payload.new.active_habit.goldTransactions : []
           });
         }
       }
