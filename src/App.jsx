@@ -360,13 +360,25 @@ export default function App() {
     setGoldTransactions(prev => prev.filter(tx => tx.id !== id));
   };
 
-  // Portfolio Metrics Calculations
+  // Financial Asset Portfolio Metrics Calculations (Digital Pool + Physical Vault Bars)
   const safeGoldTxs = Array.isArray(goldTransactions) ? goldTransactions : [];
   const totalSpentTHB = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.amountTHB) || 0), 0);
-  const totalWeightGrams = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.weightGrams) || 0), 0);
-  const avgCostPerGram = totalWeightGrams > 0 ? (totalSpentTHB / Math.max(totalWeightGrams, 0.0001)) : 0;
+  
+  // Digital Pool grams remaining
+  const digitalPoolGrams = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.weightGrams) || 0), 0);
+  
+  // Physical Vault bars grams (Redeemed physical bars)
+  const physicalVaultGrams = safeGoldTxs
+    .filter(tx => tx.type === 'redeem')
+    .reduce((sum, tx) => sum + Math.abs(Number(tx.weightGrams) || 0.1), 0);
 
-  const currentMarketValueTHB = Math.max(totalWeightGrams, 0) * (goldSpotPricePerBaht / 15.244);
+  // COMBINED TOTAL GOLD ASSET WEIGHT (Digital Pool + Physical Vault)
+  const totalAssetWeightGrams = Math.max(0, digitalPoolGrams) + physicalVaultGrams;
+
+  const avgCostPerGram = totalAssetWeightGrams > 0 ? (totalSpentTHB / Math.max(totalAssetWeightGrams, 0.0001)) : 0;
+
+  // Real Market Portfolio Valuation (Digital + Physical Vault combined)
+  const currentMarketValueTHB = totalAssetWeightGrams * (goldSpotPricePerBaht / 15.244);
   const netProfitTHB = currentMarketValueTHB - totalSpentTHB;
   const netProfitPercent = totalSpentTHB > 0 ? ((netProfitTHB / totalSpentTHB) * 100) : 0;
   const physicalBarsCount = safeGoldTxs.filter(tx => tx.isPhysicalBar || tx.type === 'redeem').length;
@@ -610,12 +622,12 @@ export default function App() {
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Gold Accumulated</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Gold Asset</div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-emerald)', marginTop: '2px' }}>
-                    {totalWeightGrams.toFixed(4)} g
+                    {totalAssetWeightGrams.toFixed(4)} g
                   </div>
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
-                    {physicalBarsCount} Physical Bars
+                    Digital: {Math.max(0, digitalPoolGrams).toFixed(4)}g
                   </div>
                 </div>
 
@@ -626,6 +638,21 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
+              {/* Physical Vault Sub-Bar */}
+              {physicalBarsCount > 0 && (
+                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px border-dash var(--border-card)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-app)', padding: '10px 14px', borderRadius: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Package size={16} color="#f59e0b" />
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Physical Vault Inventory
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f59e0b' }}>
+                    {physicalVaultGrams.toFixed(4)} g ({physicalBarsCount} Physical Bars)
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Log Buy / Redeem Button */}
@@ -711,9 +738,12 @@ export default function App() {
                           {tx.type === 'redeem' ? <Package size={18} color="#f59e0b" /> : <Coins size={18} color="#10b981" />}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             {tx.type === 'redeem' ? (
-                              `Redeemed ${Math.abs(tx.weightGrams || 0.1)}g Physical Bar`
+                              <>
+                                Redeemed {Math.abs(tx.weightGrams || 0.1)}g Bar
+                                <span className="tag-pill" style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.68rem', padding: '2px 6px' }}>Vault Transfer</span>
+                              </>
                             ) : (
                               `${Number(tx.amountTHB).toLocaleString()} THB → +${Number(tx.weightGrams).toFixed(4)} g Gold`
                             )}
