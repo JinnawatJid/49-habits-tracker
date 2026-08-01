@@ -129,9 +129,9 @@ export default function App() {
   const [goldSpotPricePerBaht, setGoldSpotPricePerBaht] = useState(() => {
     try {
       const saved = localStorage.getItem('49habits_gold_spot');
-      return saved ? Number(saved) : 64550;
+      return saved ? Number(saved) : 64150;
     } catch (e) {
-      return 64550;
+      return 64150;
     }
   });
 
@@ -142,7 +142,7 @@ export default function App() {
   const [showGoldModal, setShowGoldModal] = useState(false);
   const [goldModalMode, setGoldModalMode] = useState('buy'); // 'buy' or 'redeem'
   const [inputGoldTHB, setInputGoldTHB] = useState('100');
-  const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64550);
+  const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64150);
   const [inputRefId, setInputRefId] = useState('');
   const [inputRedeemBarSize, setInputRedeemBarSize] = useState('0.1');
 
@@ -289,7 +289,7 @@ export default function App() {
 
   // Auto-calculated Buy Weight math
   const numTHB = Number(inputGoldTHB) || 0;
-  const numPricePerBaht = Number(inputGoldPricePerBaht) || 64550;
+  const numPricePerBaht = Number(inputGoldPricePerBaht) || 64150;
   const autoCalculatedGrams = numPricePerBaht > 0 ? (numTHB * 15.244) / numPricePerBaht : 0;
   const autoCalculatedBaht = autoCalculatedGrams / 15.244;
 
@@ -800,7 +800,7 @@ export default function App() {
                     <input 
                       type="number" 
                       className="input-balanced"
-                      placeholder="e.g. 64550"
+                      placeholder="e.g. 64150"
                       value={inputGoldPricePerBaht}
                       onChange={(e) => setInputGoldPricePerBaht(Number(e.target.value))}
                       required
