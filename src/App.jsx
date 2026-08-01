@@ -34,7 +34,7 @@ const getInitialSyncKey = () => {
     if (saved) return saved;
 
     return null;
-  } catch (e) {
+  } catch {
     return null;
   }
 };
@@ -74,7 +74,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('49habits_theme');
       return saved ? saved : 'light';
-    } catch (e) {
+    } catch {
       return 'light';
     }
   });
@@ -89,7 +89,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('49habits_seq_level');
       return saved ? JSON.parse(saved) : 1;
-    } catch (e) {
+    } catch {
       return 1;
     }
   });
@@ -98,7 +98,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('49habits_seq_checkins');
       return saved ? JSON.parse(saved) : [];
-    } catch (e) {
+    } catch {
       return [];
     }
   });
@@ -107,7 +107,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('49habits_seq_mastered');
       return saved ? JSON.parse(saved) : [];
-    } catch (e) {
+    } catch {
       return [];
     }
   });
@@ -234,7 +234,7 @@ export default function App() {
           origin: { y: 0.6 },
           colors: ['#10b981', '#3b82f6', '#f59e0b']
         });
-      } catch (e) {}
+      } catch {}
 
       // Reached 21/21 Days -> Level Up!
       if (updatedDates.length >= 21) {

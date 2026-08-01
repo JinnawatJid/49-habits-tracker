@@ -1,5 +1,4 @@
 // Service Worker for Production PWA
-const CACHE_NAME = '49habits-pwa-v2';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
