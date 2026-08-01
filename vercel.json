@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/gold-price",
-      "destination": "https://thai-gold-api.vercel.app/latest"
+      "destination": "/api/gold-price.js"
     }
   ]
 }

@@ -161,24 +161,19 @@ export default function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Same-Origin Proxy Live Real-Time Gold Price Fetcher
+  // Same-Origin Native API Gold Price Fetcher
   const fetchLiveGoldPrice = async () => {
     setIsLiveLoading(true);
     try {
-      // Same-origin rewrite proxy endpoint (/api/gold-price)
       const res = await fetch('/api/gold-price');
       if (res.ok) {
         const data = await res.json();
-        if (data && data.response && data.response.price && data.response.price.gold_bar) {
-          const sellPriceStr = data.response.price.gold_bar.sell || data.response.price.gold_bar.buy;
-          const cleanPrice = Number(sellPriceStr.replace(/,/g, ''));
-          if (cleanPrice > 30000) {
-            setGoldSpotPricePerBaht(cleanPrice);
-            const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            setLastSpotUpdatedTime(nowTime);
-            setIsLiveLoading(false);
-            return;
-          }
+        if (data && data.pricePerBaht && Number(data.pricePerBaht) > 30000) {
+          setGoldSpotPricePerBaht(Number(data.pricePerBaht));
+          const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          setLastSpotUpdatedTime(nowTime);
+          setIsLiveLoading(false);
+          return;
         }
       }
     } catch (e) {
