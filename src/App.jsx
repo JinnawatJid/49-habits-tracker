@@ -39,18 +39,27 @@ const getInitialSyncKey = () => {
   }
 };
 
-// 49 Sequential Levels Master Definition
+// 49 Sequential Levels Master Definition (7-Day Sprint Model)
 const SEQUENTIAL_49_LEVELS = [
   {
     level: 1,
     title: 'ออกไปรับอากาศบริสุทธิ์',
     description: 'ใช้เวลานอกบ้านอย่างน้อยวันละ 30 นาที เพื่อรับวิตามินดี รับอากาศบริสุทธิ์ ช่วยให้สุขภาพและใจแข็งแรง',
+    targetDays: 7,
     isDefined: true
   },
-  ...Array.from({ length: 48 }, (_, i) => ({
-    level: i + 2,
-    title: `Locked Habit (Chapter ${i + 2})`,
-    description: `Unlock by completing Level ${i + 1} (21/21 Days)`,
+  {
+    level: 2,
+    title: 'ล้างหน้าปั๊บขยับ 1 นาที',
+    description: 'วิดพื้นเพื่อสร้างความกระปรี้กระเปร่า',
+    targetDays: 7,
+    isDefined: true
+  },
+  ...Array.from({ length: 47 }, (_, i) => ({
+    level: i + 3,
+    title: `Locked Habit (Chapter ${i + 3})`,
+    description: `Unlock by completing Level ${i + 2} (7/7 Days)`,
+    targetDays: 7,
     isDefined: false
   }))
 ];
@@ -79,12 +88,12 @@ export default function App() {
     }
   });
 
-  // Safeguard refs
+  // Safeguard refs against race conditions
   const isInitializedRef = useRef(false);
   const isRemoteUpdateRef = useRef(false);
   const lastStateStrRef = useRef('');
 
-  // Level Progress state
+  // Level Progress state (Default: Level 1)
   const [currentLevel, setCurrentLevel] = useState(() => {
     try {
       const saved = localStorage.getItem('49habits_seq_level');
@@ -112,18 +121,17 @@ export default function App() {
     }
   });
 
-  // Apply data-theme attribute on root HTML element
+  // Apply theme data attribute
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('49habits_theme', theme);
   }, [theme]);
 
-  // Toggle Theme Function
   const toggleTheme = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // STEP 1: On Mount or Sync Key Change -> Fetch Cloud Data BEFORE allowing Pushes
+  // STEP 1: On Mount or Sync Key Change -> Fetch Cloud Data BEFORE Pushing
   useEffect(() => {
     if (!syncKey) return;
     isInitializedRef.current = false;
@@ -201,7 +209,7 @@ export default function App() {
     };
   }, [syncKey]);
 
-  // Handle Single Field Sync Key Login
+  // Single Field Sync Key Login
   const handleSaveSyncKey = (e) => {
     e.preventDefault();
     if (!inputSyncKey.trim()) return;
@@ -214,13 +222,14 @@ export default function App() {
     setInputSyncKey('');
   };
 
-  // Active level data
+  // Active level data & 7-Day Sprint math
   const activeLevelData = SEQUENTIAL_49_LEVELS.find(l => l.level === currentLevel) || SEQUENTIAL_49_LEVELS[0];
+  const targetDays = activeLevelData.targetDays || 7;
   const isCheckedToday = activeCheckIns.includes(todayISO);
   const completedDaysCount = activeCheckIns.length;
   const currentDayNum = isCheckedToday ? completedDaysCount : completedDaysCount + 1;
 
-  // Handle Today's Level Check-In
+  // Handle Today's Check-In
   const handleLevelCheckIn = () => {
     if (isCheckedToday) {
       setActiveCheckIns(prev => prev.filter(d => d !== todayISO));
@@ -236,14 +245,14 @@ export default function App() {
         });
       } catch {}
 
-      // Reached 21/21 Days -> Level Up!
-      if (updatedDates.length >= 21) {
+      // Reached 7/7 Days -> Level Up!
+      if (updatedDates.length >= targetDays) {
         alert(`🎉 CONGRATULATIONS! You completed Level ${currentLevel}: "${activeLevelData.title}"! Unlocking Level ${currentLevel + 1}!`);
 
         const newMasteredItem = {
           level: currentLevel,
           title: activeLevelData.title,
-          completedDate: 'Completed 21/21 Days',
+          completedDate: `Completed ${targetDays}/${targetDays} Days`,
           date: todayISO
         };
 
@@ -293,25 +302,25 @@ export default function App() {
       <main className="main-content">
         {activeTab === 'today' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Single 21-Day Habit Challenge Card */}
+            {/* Single 7-Day Sprint Habit Challenge Card */}
             <div className="hero-challenge-card animate-pop" style={{ margin: '12px 0' }}>
               <div className="hero-card-header">
                 <span className="hero-subtitle-tag" style={{ color: '#10b981', fontWeight: 700 }}>
-                  LEVEL {currentLevel} ACTIVE
+                  LEVEL {currentLevel} ACTIVE • 7-DAY SPRINT
                 </span>
                 <span className="hero-day-pill">
-                  Day {currentDayNum} of 21
+                  Day {currentDayNum} of {targetDays}
                 </span>
               </div>
 
               <h2 className="hero-title">Level {currentLevel}: {activeLevelData.title}</h2>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
                 {activeLevelData.description}
               </p>
 
-              {/* 21-Circle Matrix Grid */}
-              <div className="dot-matrix-21">
-                {Array.from({ length: 21 }, (_, i) => i + 1).map((dayNum) => {
+              {/* 7-Circle Matrix Single Row */}
+              <div className="dot-matrix-21" style={{ gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '20px' }}>
+                {Array.from({ length: targetDays }, (_, i) => i + 1).map((dayNum) => {
                   const isCompleted = dayNum <= completedDaysCount;
                   const isTodayTarget = dayNum === completedDaysCount + 1 && !isCheckedToday;
                   return (
@@ -319,7 +328,7 @@ export default function App() {
                       key={dayNum} 
                       className={`dot-circle ${isCompleted ? 'completed' : ''} ${isTodayTarget ? 'today-target' : ''}`}
                     >
-                      {isCompleted ? <Check size={12} strokeWidth={3} /> : ''}
+                      {isCompleted ? <Check size={14} strokeWidth={3} /> : `Day ${dayNum}`}
                     </div>
                   );
                 })}
@@ -329,7 +338,7 @@ export default function App() {
               <button 
                 className={`checkin-btn-balanced ${isCheckedToday ? 'checked' : ''}`}
                 onClick={handleLevelCheckIn}
-                style={{ marginTop: '12px' }}
+                style={{ marginTop: '8px' }}
               >
                 {isCheckedToday ? (
                   <><CheckCircle2 size={18} /> Completed Today</>
@@ -350,7 +359,7 @@ export default function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {safeMastered.length === 0 ? (
                   <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '16px' }}>
-                    Complete Level 1 (21/21 Days) to unlock your first trophy here!
+                    Complete Level 1 (7/7 Days) to unlock Level 2 and earn your first trophy here!
                   </div>
                 ) : (
                   safeMastered.map(m => (
@@ -444,7 +453,7 @@ export default function App() {
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
-              Enter your private sync key (e.g. <strong>Jinna-2026</strong>) to sync your 21-day level progress across all your devices!
+              Enter your private sync key (e.g. <strong>Jinna-2026</strong>) to sync your 7-day sprint progress across all your devices!
             </p>
 
             {syncKey && (
