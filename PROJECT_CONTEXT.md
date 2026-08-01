@@ -1,14 +1,14 @@
 # Project Context: 49 Habits Tracker & Gold DCA
 
 ## Overview
-A gamified daily habits and wealth tracking web application based on the book *49 habits นิสัยง่ายๆ ชีวิตโคตรดี*. Users progress through 49 sequential levels (7-Day Sprint Model) and track physical 0.1g gold bar DCA investments in real-time.
+A gamified daily habits and wealth tracking web application based on the book *49 habits นิสัยง่ายๆ ชีวิตโคตรดี*. Users progress through 49 sequential levels (7-Day Sprint Model) and track physical 0.1g gold bar DCA investments & redemptions in real-time.
 
 ---
 
 ## 🏛️ Core Architecture & Tech Stack
 - **Framework**: React 19 + Vite 8
 - **Sprint Engine**: 7-Day Micro-Habit Sprint (Single-row 7 circles matrix).
-- **Gold DCA Engine**: Physical Gold Bar DCA Portfolio Tracker (Capital spent, gold weight in grams, physical bars count, average cost THB/g, net profit/loss, reference spot rate).
+- **Gold DCA Engine**: Physical Gold Bar DCA & Redemption Portfolio Tracker (Capital spent, gold weight in grams, physical 0.1g bars count, average cost THB/g, net profit/loss, reference spot rate, and dual-mode Buy/Redeem modal).
 - **Design System & Typography**: Dual-Theme Support (Balanced Light Mode `#F8FAFC` & Sleek Dark Slate Mode `#0F172A` with Emerald `#10B981` accents). **100% Unified Natural English Typography** (zero parenthetical `()` clutter) + **Crisp Lucide SVG Vector Icons** (zero clunky OS emojis).
 - **Real Calendar Date Engine**: ISO date engine (`YYYY-MM-DD`) with clean human header date formatting (`Saturday, Aug 1`).
 - **Database & Sync Engine**: Supabase Real-Time PostgreSQL (`user_habits` table) with Single-Field Private Sync Key authentication (`Jinna-2026`).
@@ -26,10 +26,10 @@ A gamified daily habits and wealth tracking web application based on the book *4
 ---
 
 ## 🛡️ Critical Technical Invariants & Safeguards
-1. **Unified Natural English Typography**: All UI labels, badges, headers, and metrics use 100% clean English typography without parenthetical clutter or mixed language labels.
-2. **Crisp Lucide SVG Vector Icons Only**: Never use browser OS emojis (`🪙`, `🏆`, `🟢`). Use Lucide SVG vector components (`<Coins />`, `<Award />`, `<CheckCircle2 />`).
-3. **Wireframe Approval First**: Always generate a visual mockup via Stitch and obtain explicit user approval before modifying UI code.
-4. **Zero Mock Data Policy**: Keep all user-facing UI clean and free of developer debug text.
+1. **Buy vs Redeem Gold Modal**: Log Gold dialog supports a 2-mode segmented switcher (`Buy Gold` for micro-DCA accumulation with auto-calculated weight vs `Redeem Bar` for physical bar withdrawal).
+2. **Unified Natural English Typography**: All UI labels, badges, headers, and metrics use 100% clean English typography without parenthetical clutter or mixed language labels.
+3. **Crisp Lucide SVG Vector Icons Only**: Never use browser OS emojis (`🪙`, `🏆`, `🟢`). Use Lucide SVG vector components (`<Coins />`, `<Award />`, `<CheckCircle2 />`, `<Package />`).
+4. **Wireframe Approval First**: Always generate a visual mockup via Stitch and obtain explicit user approval before modifying UI code.
 5. **Mount Overwrite Guard (`isInitializedRef`)**: Block cloud push on app mount until initial cloud state fetch completes.
 6. **Echo Loop Prevention (`isRemoteUpdateRef`)**: Ignore incoming real-time broadcasts when updating local React state to prevent infinite loops.
 7. **Git Profile Enforcement**: Ensure active gh CLI account is `JinnawatJid` for personal repository pushes.
