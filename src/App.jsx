@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
-  Coins, Plus, Trash2, TrendingUp, Sparkles, Scale
+  Coins, Plus, Trash2, TrendingUp, Sparkles, Scale, ArrowUpRight, ArrowDownRight, Package
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -129,16 +129,19 @@ export default function App() {
   const [goldSpotPricePerBaht, setGoldSpotPricePerBaht] = useState(() => {
     try {
       const saved = localStorage.getItem('49habits_gold_spot');
-      return saved ? Number(saved) : 41500;
+      return saved ? Number(saved) : 64550;
     } catch (e) {
-      return 41500;
+      return 64550;
     }
   });
 
+  // Redesigned Log Gold Modal State
   const [showGoldModal, setShowGoldModal] = useState(false);
-  const [inputGoldTHB, setInputGoldTHB] = useState('');
-  const [inputGoldGrams, setInputGoldGrams] = useState('0.1');
-  const [inputIsPhysicalBar, setInputIsPhysicalBar] = useState(true);
+  const [goldModalMode, setGoldModalMode] = useState('buy'); // 'buy' or 'redeem'
+  const [inputGoldTHB, setInputGoldTHB] = useState('100');
+  const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64550);
+  const [inputRefId, setInputRefId] = useState('');
+  const [inputRedeemBarSize, setInputRedeemBarSize] = useState('0.1');
 
   // Apply theme data attribute
   useEffect(() => {
@@ -247,32 +250,58 @@ export default function App() {
     setInputSyncKey('');
   };
 
-  // Log New Gold DCA Purchase
-  const handleAddGoldTransaction = (e) => {
+  // Auto-calculated Buy Weight math
+  const numTHB = Number(inputGoldTHB) || 0;
+  const numPricePerBaht = Number(inputGoldPricePerBaht) || 64550;
+  const autoCalculatedGrams = numPricePerBaht > 0 ? (numTHB * 15.244) / numPricePerBaht : 0;
+  const autoCalculatedBaht = autoCalculatedGrams / 15.244;
+
+  // Log Gold Transaction (Buy or Redeem)
+  const handleSaveGoldTransaction = (e) => {
     e.preventDefault();
-    const thb = Number(inputGoldTHB);
-    const grams = Number(inputGoldGrams);
 
-    if (isNaN(thb) || thb <= 0 || isNaN(grams) || grams <= 0) return;
+    if (goldModalMode === 'buy') {
+      if (numTHB <= 0 || autoCalculatedGrams <= 0) return;
 
-    const newTx = {
-      id: 'gt-' + Date.now(),
-      date: getTodayISO(),
-      amountTHB: thb,
-      weightGrams: grams,
-      isPhysicalBar: inputIsPhysicalBar
-    };
+      const newTx = {
+        id: 'gt-' + Date.now(),
+        type: 'buy',
+        date: getTodayISO(),
+        amountTHB: numTHB,
+        weightGrams: autoCalculatedGrams,
+        pricePerBaht: numPricePerBaht,
+        refId: inputRefId.trim(),
+        isPhysicalBar: false
+      };
 
-    setGoldTransactions([newTx, ...goldTransactions]);
-    setInputGoldTHB('');
-    setInputGoldGrams('0.1');
+      setGoldTransactions([newTx, ...goldTransactions]);
+    } else {
+      // Redeem Mode
+      const redeemGrams = Number(inputRedeemBarSize) || 0.1;
+
+      const newTx = {
+        id: 'gt-' + Date.now(),
+        type: 'redeem',
+        date: getTodayISO(),
+        amountTHB: 0,
+        weightGrams: -redeemGrams,
+        barSize: redeemGrams,
+        refId: inputRefId.trim(),
+        isPhysicalBar: true
+      };
+
+      setGoldTransactions([newTx, ...goldTransactions]);
+    }
+
+    setInputGoldTHB('100');
+    setInputRefId('');
     setShowGoldModal(false);
 
     try {
       confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.7 },
+        particleCount: 60,
+        spread: 70,
+        origin: { y: 0.65 },
         colors: ['#10b981', '#3b82f6', '#f59e0b']
       });
     } catch (err) {}
@@ -283,16 +312,16 @@ export default function App() {
     setGoldTransactions(prev => prev.filter(tx => tx.id !== id));
   };
 
-  // Calculations for Gold DCA Portfolio
+  // Portfolio Metrics Calculations
   const safeGoldTxs = Array.isArray(goldTransactions) ? goldTransactions : [];
   const totalSpentTHB = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.amountTHB) || 0), 0);
   const totalWeightGrams = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.weightGrams) || 0), 0);
-  const avgCostPerGram = totalWeightGrams > 0 ? (totalSpentTHB / totalWeightGrams) : 0;
+  const avgCostPerGram = totalWeightGrams > 0 ? (totalSpentTHB / Math.max(totalWeightGrams, 0.0001)) : 0;
 
-  const currentMarketValueTHB = totalWeightGrams * (goldSpotPricePerBaht / 15.244);
+  const currentMarketValueTHB = Math.max(totalWeightGrams, 0) * (goldSpotPricePerBaht / 15.244);
   const netProfitTHB = currentMarketValueTHB - totalSpentTHB;
   const netProfitPercent = totalSpentTHB > 0 ? ((netProfitTHB / totalSpentTHB) * 100) : 0;
-  const physicalBarsCount = safeGoldTxs.filter(tx => tx.isPhysicalBar).length;
+  const physicalBarsCount = safeGoldTxs.filter(tx => tx.isPhysicalBar || tx.type === 'redeem').length;
 
   // Active level data & 7-Day Sprint math
   const activeLevelData = SEQUENTIAL_49_LEVELS.find(l => l.level === currentLevel) || SEQUENTIAL_49_LEVELS[0];
@@ -535,7 +564,7 @@ export default function App() {
                 <div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Gold Accumulated</div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-emerald)', marginTop: '2px' }}>
-                    {totalWeightGrams.toFixed(2)} g
+                    {totalWeightGrams.toFixed(4)} g
                   </div>
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
                     {physicalBarsCount} Physical Bars
@@ -551,13 +580,13 @@ export default function App() {
               </div>
             </div>
 
-            {/* Log Buy Button */}
+            {/* Log Buy / Redeem Button */}
             <button 
               className="btn-emerald-solid"
               onClick={() => setShowGoldModal(true)}
               style={{ height: '48px', fontSize: '0.98rem' }}
             >
-              <Plus size={20} /> Log Gold DCA
+              <Plus size={20} /> Log Gold Transaction
             </button>
 
             {/* Gold Spot Price Reference Card */}
@@ -580,28 +609,37 @@ export default function App() {
               </div>
             </div>
 
-            {/* Recent Purchases List */}
+            {/* Recent Purchases & Redemptions List */}
             <div>
-              <h3 className="section-heading">Recent Purchases</h3>
+              <h3 className="section-heading">Recent Purchases & Redemptions</h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {safeGoldTxs.length === 0 ? (
                   <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '24px' }}>
-                    No gold purchases logged yet. Click "+ Log Gold DCA" above to start tracking
+                    No gold transactions logged yet. Click "+ Log Gold Transaction" above to start tracking
                   </div>
                 ) : (
                   safeGoldTxs.map(tx => (
                     <div key={tx.id} className="task-card-row">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-app)', border: '1px solid var(--border-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Coins size={18} color="#10b981" />
+                        <div style={{ 
+                          width: '36px', height: '36px', borderRadius: '50%', 
+                          background: tx.type === 'redeem' ? '#fef3c7' : 'var(--bg-app)', 
+                          border: '1px solid var(--border-card)', 
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
+                        }}>
+                          {tx.type === 'redeem' ? <Package size={18} color="#f59e0b" /> : <Coins size={18} color="#10b981" />}
                         </div>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                            {Number(tx.amountTHB).toLocaleString()} THB → {Number(tx.weightGrams).toFixed(2)} g Gold
+                            {tx.type === 'redeem' ? (
+                              `Redeemed ${Math.abs(tx.weightGrams || 0.1)}g Physical Bar`
+                            ) : (
+                              `${Number(tx.amountTHB).toLocaleString()} THB → +${Number(tx.weightGrams).toFixed(4)} g Gold`
+                            )}
                           </div>
                           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                            {tx.date} {tx.isPhysicalBar && '• 0.1g Physical Bar'}
+                            {tx.date} {tx.refId && `• Ref: ${tx.refId}`}
                           </div>
                         </div>
                       </div>
@@ -621,14 +659,14 @@ export default function App() {
         )}
       </main>
 
-      {/* Log Gold DCA Purchase Modal */}
+      {/* Log Gold Transaction Modal (Buy vs Redeem Switcher) */}
       {showGoldModal && (
         <div className="modal-overlay" onClick={() => setShowGoldModal(false)}>
           <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Coins size={22} color="#10b981" />
-                <h2 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Log Gold DCA Purchase</h2>
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Log Gold Transaction</h2>
               </div>
               <button 
                 onClick={() => setShowGoldModal(false)}
@@ -638,52 +676,137 @@ export default function App() {
               </button>
             </div>
 
-            <form onSubmit={handleAddGoldTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
-                  Amount Spent (THB)
-                </label>
-                <input 
-                  type="number" 
-                  className="input-balanced"
-                  placeholder="e.g. 500"
-                  value={inputGoldTHB}
-                  onChange={(e) => setInputGoldTHB(e.target.value)}
-                  required
-                  autoFocus
-                />
-              </div>
+            {/* Segmented Mode Switcher */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-app)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-card)', marginBottom: '18px' }}>
+              <button 
+                type="button"
+                onClick={() => setGoldModalMode('buy')}
+                style={{
+                  padding: '8px',
+                  borderRadius: '9px',
+                  border: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: goldModalMode === 'buy' ? 'var(--surface-card)' : 'transparent',
+                  color: goldModalMode === 'buy' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  boxShadow: goldModalMode === 'buy' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <ArrowUpRight size={16} color="#10b981" /> Buy Gold
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => setGoldModalMode('redeem')}
+                style={{
+                  padding: '8px',
+                  borderRadius: '9px',
+                  border: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: goldModalMode === 'redeem' ? 'var(--surface-card)' : 'transparent',
+                  color: goldModalMode === 'redeem' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  boxShadow: goldModalMode === 'redeem' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Package size={16} color="#f59e0b" /> Redeem Bar
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveGoldTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {goldModalMode === 'buy' ? (
+                <>
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                      Amount Paid (THB)
+                    </label>
+                    <input 
+                      type="number" 
+                      className="input-balanced"
+                      placeholder="e.g. 100"
+                      value={inputGoldTHB}
+                      onChange={(e) => setInputGoldTHB(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                      Gold Price per Baht (THB/Baht)
+                    </label>
+                    <input 
+                      type="number" 
+                      className="input-balanced"
+                      placeholder="e.g. 64550"
+                      value={inputGoldPricePerBaht}
+                      onChange={(e) => setInputGoldPricePerBaht(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+
+                  {/* Auto-Calculated Result Box */}
+                  <div style={{ background: 'var(--bg-app)', border: '1px solid var(--accent-emerald)', padding: '12px 14px', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      GOLD WEIGHT RECEIVED (AUTO-CALCULATED)
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+                      +{autoCalculatedGrams.toFixed(5)} g <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>({autoCalculatedBaht.toFixed(5)} Baht of Gold)</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Redeem Mode */
+                <>
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                      Physical Bar Size to Redeem
+                    </label>
+                    <select 
+                      className="input-balanced"
+                      value={inputRedeemBarSize}
+                      onChange={(e) => setInputRedeemBarSize(e.target.value)}
+                    >
+                      <option value="0.1">0.1g Physical Bar</option>
+                      <option value="0.5">0.5g Physical Bar</option>
+                      <option value="1.0">1.0g Physical Bar</option>
+                      <option value="15.244">1.0 Baht Gold Bar (15.244g)</option>
+                    </select>
+                  </div>
+
+                  <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', padding: '12px 14px', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      Redeeming deducts <strong>-{inputRedeemBarSize}g</strong> from your digital gold pool and adds <strong>+1 Physical Bar</strong> to your physical vault inventory!
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div>
                 <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
-                  Gold Weight Received (Grams)
+                  Reference ID (Optional)
                 </label>
                 <input 
-                  type="number"
-                  step="0.01" 
+                  type="text" 
                   className="input-balanced"
-                  placeholder="e.g. 0.1"
-                  value={inputGoldGrams}
-                  onChange={(e) => setInputGoldGrams(e.target.value)}
-                  required
+                  placeholder="e.g. MGB0000S260730656202"
+                  value={inputRefId}
+                  onChange={(e) => setInputRefId(e.target.value)}
                 />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0' }}>
-                <input 
-                  type="checkbox"
-                  id="physicalBarCheck"
-                  checked={inputIsPhysicalBar}
-                  onChange={(e) => setInputIsPhysicalBar(e.target.checked)}
-                  style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }}
-                />
-                <label htmlFor="physicalBarCheck" style={{ fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
-                  Redeemed 0.1g Physical Bar
-                </label>
               </div>
 
               <button type="submit" className="btn-emerald-solid" style={{ height: '46px', marginTop: '4px' }}>
-                Save Gold DCA
+                {goldModalMode === 'buy' ? 'Save Buy Transaction' : 'Save Redeem Transaction'}
               </button>
             </form>
           </div>
