@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
-  Coins, Plus, Trash2, TrendingUp, DollarSign, Scale
+  Coins, Plus, Trash2, TrendingUp, Sparkles, Scale
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -17,7 +17,7 @@ const getTodayISO = () => {
 };
 
 const getPolishedHeaderDate = () => {
-  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 };
 
 // Reads initial sync key
@@ -59,7 +59,7 @@ const SEQUENTIAL_49_LEVELS = [
   ...Array.from({ length: 47 }, (_, i) => ({
     level: i + 3,
     title: `Locked Habit (Chapter ${i + 3})`,
-    description: `Unlock by completing Level ${i + 2} (7/7 Days)`,
+    description: `Unlock by completing Level ${i + 2} (7 Days Sprint)`,
     targetDays: 7,
     isDefined: false
   }))
@@ -273,7 +273,7 @@ export default function App() {
         particleCount: 50,
         spread: 60,
         origin: { y: 0.7 },
-        colors: ['#f59e0b', '#10b981', '#fbbf24']
+        colors: ['#10b981', '#3b82f6', '#f59e0b']
       });
     } catch (err) {}
   };
@@ -287,9 +287,7 @@ export default function App() {
   const safeGoldTxs = Array.isArray(goldTransactions) ? goldTransactions : [];
   const totalSpentTHB = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.amountTHB) || 0), 0);
   const totalWeightGrams = safeGoldTxs.reduce((sum, tx) => sum + (Number(tx.weightGrams) || 0), 0);
-  const totalBahtGold = totalWeightGrams / 15.244;
   const avgCostPerGram = totalWeightGrams > 0 ? (totalSpentTHB / totalWeightGrams) : 0;
-  const avgCostPerBaht = avgCostPerGram * 15.244;
 
   const currentMarketValueTHB = totalWeightGrams * (goldSpotPricePerBaht / 15.244);
   const netProfitTHB = currentMarketValueTHB - totalSpentTHB;
@@ -321,12 +319,12 @@ export default function App() {
 
       // Reached 7/7 Days -> Level Up!
       if (updatedDates.length >= targetDays) {
-        alert(`🎉 CONGRATULATIONS! You completed Level ${currentLevel}: "${activeLevelData.title}"! Unlocking Level ${currentLevel + 1}!`);
+        alert(`Congratulations! You completed Level ${currentLevel}: "${activeLevelData.title}"! Unlocking Level ${currentLevel + 1}!`);
 
         const newMasteredItem = {
           level: currentLevel,
           title: activeLevelData.title,
-          completedDate: `Completed ${targetDays}/${targetDays} Days`,
+          completedDate: `Completed ${targetDays} Days Sprint`,
           date: todayISO
         };
 
@@ -348,7 +346,7 @@ export default function App() {
         <div>
           <h1 className="header-date">{getPolishedHeaderDate()}</h1>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
-            {activeTab === 'gold' ? 'Gold DCA Portfolio 🪙' : '49 Habits Journey'}
+            {activeTab === 'gold' ? 'Gold DCA Portfolio' : '49 Habits Journey'}
           </div>
         </div>
 
@@ -380,7 +378,7 @@ export default function App() {
             <div className="hero-challenge-card animate-pop" style={{ margin: '12px 0' }}>
               <div className="hero-card-header">
                 <span className="hero-subtitle-tag" style={{ color: '#10b981', fontWeight: 700 }}>
-                  LEVEL {currentLevel} ACTIVE • 7-DAY SPRINT
+                  LEVEL {currentLevel} ACTIVE • 7 DAYS SPRINT
                 </span>
                 <span className="hero-day-pill">
                   Day {currentDayNum} of {targetDays}
@@ -433,13 +431,13 @@ export default function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {safeMastered.length === 0 ? (
                   <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '16px' }}>
-                    Complete Level 1 (7/7 Days) to unlock Level 2 and earn your first trophy here!
+                    Complete Level 1 to unlock Level 2 and earn your first trophy here
                   </div>
                 ) : (
                   safeMastered.map(m => (
                     <div key={m.level} className="task-card-row">
-                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#feefc3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
-                        🏆
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-app)', border: '1px solid var(--border-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Award size={18} color="#f59e0b" />
                       </div>
                       <div style={{ flex: 1, margin: '0 10px' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
@@ -487,7 +485,7 @@ export default function App() {
 
                       <div style={{ marginLeft: '12px', flexShrink: 0 }}>
                         {isMastered && <span className="tag-pill tag-green">Mastered</span>}
-                        {isActive && <span className="tag-pill tag-green">Active 🟢</span>}
+                        {isActive && <span className="tag-pill tag-green">Active</span>}
                         {isLocked && (
                           <span className="tag-pill" style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Lock size={10} /> Locked
@@ -512,7 +510,7 @@ export default function App() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div>
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    CURRENT MARKET VALUE (มูลค่าปัจจุบัน)
+                    PORTFOLIO VALUE
                   </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
                     {currentMarketValueTHB.toLocaleString('en-US', { maximumFractionDigits: 0 })} <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-secondary)' }}>THB</span>
@@ -528,24 +526,24 @@ export default function App() {
               {/* Key Metrics Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', paddingTop: '16px', borderTop: '1px solid var(--border-card)' }}>
                 <div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>ต้นทุนรวม</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Invested</div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
                     {totalSpentTHB.toLocaleString()} THB
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>ทองคำสะสม</div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Gold Accumulated</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-emerald)', marginTop: '2px' }}>
                     {totalWeightGrams.toFixed(2)} g
                   </div>
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
-                    {physicalBarsCount}x 0.1g Bars 🪙
+                    {physicalBarsCount} Physical Bars
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>ต้นทุนเฉลี่ย</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Average Cost</div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
                     {avgCostPerGram.toLocaleString('en-US', { maximumFractionDigits: 0 })} THB/g
                   </div>
@@ -559,14 +557,17 @@ export default function App() {
               onClick={() => setShowGoldModal(true)}
               style={{ height: '48px', fontSize: '0.98rem' }}
             >
-              <Plus size={20} /> Log Gold DCA Buy
+              <Plus size={20} /> Log Gold DCA
             </button>
 
-            {/* Gold Spot Price Setting */}
-            <div className="card-balanced" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                ราคาทองแท่งอ้างอิง:
-              </span>
+            {/* Gold Spot Price Reference Card */}
+            <div className="card-balanced" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Coins size={18} color="#10b981" />
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Gold Spot Reference
+                </span>
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <input 
                   type="number"
@@ -575,32 +576,32 @@ export default function App() {
                   onChange={(e) => setGoldSpotPricePerBaht(Number(e.target.value))}
                   style={{ width: '110px', height: '34px', padding: '0 8px', textAlign: 'right', fontWeight: 700 }}
                 />
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>THB/บาท</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>THB/Baht</span>
               </div>
             </div>
 
-            {/* Recent Purchases & Physical Bars History */}
+            {/* Recent Purchases List */}
             <div>
-              <h3 className="section-heading">Recent Purchases & 0.1g Bars</h3>
+              <h3 className="section-heading">Recent Purchases</h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {safeGoldTxs.length === 0 ? (
                   <div className="task-card-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '24px' }}>
-                    No gold purchases logged yet. Click "+ Log Gold DCA Buy" above to start tracking!
+                    No gold purchases logged yet. Click "+ Log Gold DCA" above to start tracking
                   </div>
                 ) : (
                   safeGoldTxs.map(tx => (
                     <div key={tx.id} className="task-card-row">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#feefc3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
-                          🪙
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-app)', border: '1px solid var(--border-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Coins size={18} color="#10b981" />
                         </div>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                             {Number(tx.amountTHB).toLocaleString()} THB → {Number(tx.weightGrams).toFixed(2)} g Gold
                           </div>
                           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                            {tx.date} {tx.isPhysicalBar && '• Physical 0.1g Bar 🪙'}
+                            {tx.date} {tx.isPhysicalBar && '• 0.1g Physical Bar'}
                           </div>
                         </div>
                       </div>
@@ -620,13 +621,13 @@ export default function App() {
         )}
       </main>
 
-      {/* Log Gold DCA Buy Modal */}
+      {/* Log Gold DCA Purchase Modal */}
       {showGoldModal && (
         <div className="modal-overlay" onClick={() => setShowGoldModal(false)}>
           <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Coins size={22} color="#f59e0b" />
+                <Coins size={22} color="#10b981" />
                 <h2 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Log Gold DCA Purchase</h2>
               </div>
               <button 
@@ -640,7 +641,7 @@ export default function App() {
             <form onSubmit={handleAddGoldTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
-                  Money Spent (จำนวนเงินที่ซื้อ THB):
+                  Amount Spent (THB)
                 </label>
                 <input 
                   type="number" 
@@ -655,7 +656,7 @@ export default function App() {
 
               <div>
                 <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
-                  Gold Weight Received (น้ำหนักทองคำที่ได้ Grams):
+                  Gold Weight Received (Grams)
                 </label>
                 <input 
                   type="number"
@@ -677,12 +678,12 @@ export default function App() {
                   style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }}
                 />
                 <label htmlFor="physicalBarCheck" style={{ fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
-                  Redeemed to Physical 0.1g Bar 🪙
+                  Redeemed 0.1g Physical Bar
                 </label>
               </div>
 
               <button type="submit" className="btn-emerald-solid" style={{ height: '46px', marginTop: '4px' }}>
-                Save Gold DCA Transaction
+                Save Gold DCA
               </button>
             </form>
           </div>
@@ -709,7 +710,7 @@ export default function App() {
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
-              Enter your private sync key (e.g. <strong>Jinna-2026</strong>) to sync your 7-day sprint & gold DCA portfolio across all your devices!
+              Enter your private sync key to sync your 7-day sprint and gold DCA portfolio across all your devices
             </p>
 
             {syncKey && (
@@ -723,7 +724,7 @@ export default function App() {
 
             <form onSubmit={handleSaveSyncKey} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Enter or Create Your Private Sync Key:
+                Enter or Create Private Sync Key
               </label>
               <input 
                 type="text" 
