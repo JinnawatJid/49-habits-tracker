@@ -651,7 +651,7 @@ export default function App() {
               <Plus size={20} /> Log Gold Transaction
             </button>
 
-            {/* Live Gold Spot Reference Card */}
+            {/* Live Gold Spot Reference Card (Clean Read-Only Display) */}
             <div className="card-balanced" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -677,21 +677,11 @@ export default function App() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>THB/Baht</span>
-                </div>
-
-                <input 
-                  type="number"
-                  className="input-balanced"
-                  value={goldSpotPricePerBaht}
-                  onChange={(e) => setGoldSpotPricePerBaht(Number(e.target.value))}
-                  style={{ width: '100px', height: '32px', padding: '0 8px', textAlign: 'right', fontWeight: 700, fontSize: '0.82rem' }}
-                />
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>THB/Baht</span>
               </div>
 
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 500 }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '6px', fontWeight: 500 }}>
                 {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}Official Thai Gold Traders Association
               </div>
             </div>
