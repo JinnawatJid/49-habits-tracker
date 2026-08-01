@@ -13,9 +13,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first strategy for dynamic app updates
+// Network-first strategy ONLY for local origin assets
 self.addEventListener('fetch', (event) => {
-  // Never intercept localhost / dev server API or HMR requests
+  // Only intercept GET requests to our own origin
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Never intercept dev server localhost or HMR requests
   if (event.request.url.includes('localhost') || event.request.url.includes('127.0.0.1')) {
     return;
   }
