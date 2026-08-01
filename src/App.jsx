@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
-  Coins, Plus, Trash2, TrendingUp, ArrowUpRight, Package
+  Coins, Plus, Trash2, TrendingUp, Sparkles, Scale, ArrowUpRight, ArrowDownRight, Package, RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -135,6 +135,9 @@ export default function App() {
     }
   });
 
+  const [isLiveLoading, setIsLiveLoading] = useState(false);
+  const [lastSpotUpdatedTime, setLastSpotUpdatedTime] = useState('');
+
   // Redesigned Log Gold Modal State
   const [showGoldModal, setShowGoldModal] = useState(false);
   const [goldModalMode, setGoldModalMode] = useState('buy'); // 'buy' or 'redeem'
@@ -142,6 +145,11 @@ export default function App() {
   const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64550);
   const [inputRefId, setInputRefId] = useState('');
   const [inputRedeemBarSize, setInputRedeemBarSize] = useState('0.1');
+
+  // Sync modal inputGoldPricePerBaht with goldSpotPricePerBaht
+  useEffect(() => {
+    setInputGoldPricePerBaht(goldSpotPricePerBaht);
+  }, [goldSpotPricePerBaht]);
 
   // Apply theme data attribute
   useEffect(() => {
@@ -152,6 +160,60 @@ export default function App() {
   const toggleTheme = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
+
+  // Fetch Live Real-Time Thai Gold Price
+  const fetchLiveGoldPrice = async () => {
+    setIsLiveLoading(true);
+    try {
+      // Primary API: Thai Gold API
+      const res = await fetch('https://thai-gold-api.vercel.app/latest');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.response && data.response.price && data.response.price.gold_bar) {
+          const sellPriceStr = data.response.price.gold_bar.sell || data.response.price.gold_bar.buy;
+          const cleanPrice = Number(sellPriceStr.replace(/,/g, ''));
+          if (cleanPrice > 0) {
+            setGoldSpotPricePerBaht(cleanPrice);
+            const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            setLastSpotUpdatedTime(nowTime);
+            setIsLiveLoading(false);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.log('Primary gold API notice:', err.message);
+    }
+
+    try {
+      // Fallback API: Alternative Thai Gold feed
+      const res = await fetch('https://chaint.dev/api/gold');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.bar && data.bar.sell) {
+          const cleanPrice = Number(data.bar.sell.replace(/,/g, ''));
+          if (cleanPrice > 0) {
+            setGoldSpotPricePerBaht(cleanPrice);
+            const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            setLastSpotUpdatedTime(nowTime);
+            setIsLiveLoading(false);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.log('Fallback gold API notice:', err.message);
+    }
+
+    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    setLastSpotUpdatedTime(nowTime);
+    setIsLiveLoading(false);
+  };
+
+  // Auto-fetch live spot price on app mount
+  useEffect(() => {
+    fetchLiveGoldPrice();
+  }, []);
 
   // STEP 1: On Mount or Sync Key Change -> Fetch Cloud Data BEFORE Pushing
   useEffect(() => {
@@ -589,23 +651,48 @@ export default function App() {
               <Plus size={20} /> Log Gold Transaction
             </button>
 
-            {/* Gold Spot Price Reference Card */}
-            <div className="card-balanced" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Coins size={18} color="#10b981" />
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Gold Spot Reference
-                </span>
+            {/* Live Gold Spot Reference Card */}
+            <div className="card-balanced" style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Coins size={18} color="#10b981" />
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Gold Spot Reference
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="tag-pill tag-green" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700 }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span> Live
+                  </span>
+
+                  <button 
+                    onClick={fetchLiveGoldPrice}
+                    className="theme-toggle-btn"
+                    style={{ width: '30px', height: '30px' }}
+                    title="Refresh Live Gold Price"
+                  >
+                    <RefreshCw size={14} className={isLiveLoading ? 'spin-icon' : ''} />
+                  </button>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>THB/Baht</span>
+                </div>
+
                 <input 
                   type="number"
                   className="input-balanced"
                   value={goldSpotPricePerBaht}
                   onChange={(e) => setGoldSpotPricePerBaht(Number(e.target.value))}
-                  style={{ width: '110px', height: '34px', padding: '0 8px', textAlign: 'right', fontWeight: 700 }}
+                  style={{ width: '100px', height: '32px', padding: '0 8px', textAlign: 'right', fontWeight: 700, fontSize: '0.82rem' }}
                 />
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>THB/Baht</span>
+              </div>
+
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 500 }}>
+                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}Official Thai Gold Traders Association
               </div>
             </div>
 
