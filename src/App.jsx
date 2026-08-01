@@ -637,9 +637,9 @@ export default function App() {
               <Plus size={20} /> Log Gold Transaction
             </button>
 
-            {/* Live Gold Spot Reference Card (Displays Buy Rate & Sell Rate) */}
+            {/* Ultra-Clean Gold Spot Reference Card (Zero Text Clutter) */}
             <div className="card-balanced" style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Coins size={18} color="#10b981" />
                   <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -663,28 +663,29 @@ export default function App() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+              {/* Clean 2-Column Metric Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'baseline' }}>
                 <div>
                   <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>THB/Baht</span>
+                    {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>THB</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>
-                    GTA Buy Rate (ราคารับซื้อ)
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981', marginTop: '2px', letterSpacing: '0.04em' }}>
+                    BUY RATE
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                    {goldSellPricePerBaht.toLocaleString()} THB
+                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    {goldSellPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>THB</span>
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                    GTA Sell Rate (ราคาขายออก)
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em' }}>
+                    SELL RATE
                   </div>
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '10px', fontWeight: 500 }}>
-                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}Official Thai Gold Traders Association (GTA)
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
+                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}Official GTA Feed
               </div>
             </div>
 
