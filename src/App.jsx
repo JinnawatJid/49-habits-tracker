@@ -381,7 +381,6 @@ export default function App() {
   const currentMarketValueTHB = totalAssetWeightGrams * (goldSpotPricePerBaht / 15.244);
   const netProfitTHB = currentMarketValueTHB - totalSpentTHB;
   const netProfitPercent = totalSpentTHB > 0 ? ((netProfitTHB / totalSpentTHB) * 100) : 0;
-  const physicalBarsCount = safeGoldTxs.filter(tx => tx.isPhysicalBar || tx.type === 'redeem').length;
 
   // Active level data & 7-Day Sprint math
   const activeLevelData = SEQUENTIAL_49_LEVELS.find(l => l.level === currentLevel) || SEQUENTIAL_49_LEVELS[0];
@@ -612,7 +611,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Key Metrics Grid */}
+              {/* Key Metrics Grid (Clean 3 Columns) */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', paddingTop: '16px', borderTop: '1px solid var(--border-card)' }}>
                 <div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Invested</div>
@@ -626,9 +625,6 @@ export default function App() {
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-emerald)', marginTop: '2px' }}>
                     {totalAssetWeightGrams.toFixed(4)} g
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
-                    Digital: {Math.max(0, digitalPoolGrams).toFixed(4)}g
-                  </div>
                 </div>
 
                 <div>
@@ -638,21 +634,6 @@ export default function App() {
                   </div>
                 </div>
               </div>
-
-              {/* Physical Vault Sub-Bar */}
-              {physicalBarsCount > 0 && (
-                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px border-dash var(--border-card)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-app)', padding: '10px 14px', borderRadius: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Package size={16} color="#f59e0b" />
-                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Physical Vault Inventory
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f59e0b' }}>
-                    {physicalVaultGrams.toFixed(4)} g ({physicalBarsCount} Physical Bars)
-                  </span>
-                </div>
-              )}
             </div>
 
             {/* Log Buy / Redeem Button */}
