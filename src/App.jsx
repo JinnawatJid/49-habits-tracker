@@ -161,15 +161,19 @@ export default function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Same-Origin Native API Gold Price Fetcher
+  // Same-Origin Native API Gold Price Fetcher with Console Logging
   const fetchLiveGoldPrice = async () => {
     setIsLiveLoading(true);
+    console.log('[Gold API Client] Fetching live price from /api/gold-price...');
     try {
       const res = await fetch('/api/gold-price');
       if (res.ok) {
         const data = await res.json();
+        console.log('[Gold API Client] Received payload:', data);
         if (data && data.pricePerBaht && Number(data.pricePerBaht) > 30000) {
-          setGoldSpotPricePerBaht(Number(data.pricePerBaht));
+          const newPrice = Number(data.pricePerBaht);
+          setGoldSpotPricePerBaht(newPrice);
+          console.log('[Gold API Client] Updated Gold Spot Reference to:', newPrice, 'THB/Baht');
           const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
           setLastSpotUpdatedTime(nowTime);
           setIsLiveLoading(false);
@@ -177,9 +181,10 @@ export default function App() {
         }
       }
     } catch (e) {
-      // Silent catch
+      console.error('[Gold API Client] Fetch error:', e);
     }
 
+    console.log('[Gold API Client] Using default GTA spot price 64,150 THB/Baht');
     const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     setLastSpotUpdatedTime(nowTime);
     setIsLiveLoading(false);
