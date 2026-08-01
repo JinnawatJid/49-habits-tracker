@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
-  Coins, Plus, Trash2, TrendingUp, Sparkles, Scale, ArrowUpRight, ArrowDownRight, Package
+  Coins, Plus, Trash2, TrendingUp, ArrowUpRight, Package
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
