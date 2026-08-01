@@ -125,16 +125,17 @@ export default function App() {
     }
   });
 
-  // Gold Spot Price per Baht Gold (1 Baht = 15.244g)
+  // Gold Spot Price per Baht Gold (1 Baht = 15.244g) - Prefers Buy Rate 63,950
   const [goldSpotPricePerBaht, setGoldSpotPricePerBaht] = useState(() => {
     try {
       const saved = localStorage.getItem('49habits_gold_spot');
-      return saved ? Number(saved) : 64150;
+      return saved ? Number(saved) : 63950;
     } catch (e) {
-      return 64150;
+      return 63950;
     }
   });
 
+  const [goldSellPricePerBaht, setGoldSellPricePerBaht] = useState(64150);
   const [isLiveLoading, setIsLiveLoading] = useState(false);
   const [lastSpotUpdatedTime, setLastSpotUpdatedTime] = useState('');
 
@@ -142,7 +143,7 @@ export default function App() {
   const [showGoldModal, setShowGoldModal] = useState(false);
   const [goldModalMode, setGoldModalMode] = useState('buy'); // 'buy' or 'redeem'
   const [inputGoldTHB, setInputGoldTHB] = useState('100');
-  const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64150);
+  const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(63950);
   const [inputRefId, setInputRefId] = useState('');
   const [inputRedeemBarSize, setInputRedeemBarSize] = useState('0.1');
 
@@ -161,7 +162,7 @@ export default function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Same-Origin Native API Gold Price Fetcher with Console Logging
+  // Same-Origin Native API Gold Price Fetcher (Prefers GTA Buy Rate 63,950)
   const fetchLiveGoldPrice = async () => {
     setIsLiveLoading(true);
     console.log('[Gold API Client] Fetching live price from /api/gold-price...');
@@ -170,21 +171,26 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         console.log('[Gold API Client] Received payload:', data);
-        if (data && data.pricePerBaht && Number(data.pricePerBaht) > 30000) {
-          const newPrice = Number(data.pricePerBaht);
-          setGoldSpotPricePerBaht(newPrice);
-          console.log('[Gold API Client] Updated Gold Spot Reference to:', newPrice, 'THB/Baht');
-          const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-          setLastSpotUpdatedTime(nowTime);
-          setIsLiveLoading(false);
-          return;
+        if (data) {
+          const buyRate = Number(data.buyPricePerBaht || data.pricePerBaht);
+          const sellRate = Number(data.pricePerBaht || 64150);
+
+          if (buyRate > 30000) {
+            setGoldSpotPricePerBaht(buyRate);
+            setGoldSellPricePerBaht(sellRate);
+            console.log('[Gold API Client] Updated Gold Spot Reference (Buy Rate) to:', buyRate, 'THB/Baht');
+            const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            setLastSpotUpdatedTime(nowTime);
+            setIsLiveLoading(false);
+            return;
+          }
         }
       }
     } catch (e) {
       console.error('[Gold API Client] Fetch error:', e);
     }
 
-    console.log('[Gold API Client] Using default GTA spot price 64,150 THB/Baht');
+    console.log('[Gold API Client] Using default GTA Buy Rate 63,950 THB/Baht');
     const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     setLastSpotUpdatedTime(nowTime);
     setIsLiveLoading(false);
@@ -294,7 +300,7 @@ export default function App() {
 
   // Auto-calculated Buy Weight math
   const numTHB = Number(inputGoldTHB) || 0;
-  const numPricePerBaht = Number(inputGoldPricePerBaht) || 64150;
+  const numPricePerBaht = Number(inputGoldPricePerBaht) || 63950;
   const autoCalculatedGrams = numPricePerBaht > 0 ? (numTHB * 15.244) / numPricePerBaht : 0;
   const autoCalculatedBaht = autoCalculatedGrams / 15.244;
 
@@ -631,7 +637,7 @@ export default function App() {
               <Plus size={20} /> Log Gold Transaction
             </button>
 
-            {/* Live Gold Spot Reference Card (Clean Read-Only Display) */}
+            {/* Live Gold Spot Reference Card (Displays Buy Rate & Sell Rate) */}
             <div className="card-balanced" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -657,12 +663,28 @@ export default function App() {
                 </div>
               </div>
 
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>THB/Baht</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>THB/Baht</span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>
+                    GTA Buy Rate (ราคารับซื้อ)
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    {goldSellPricePerBaht.toLocaleString()} THB
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    GTA Sell Rate (ราคาขายออก)
+                  </div>
+                </div>
               </div>
 
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '6px', fontWeight: 500 }}>
-                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}Official Thai Gold Traders Association
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '10px', fontWeight: 500 }}>
+                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}Official Thai Gold Traders Association (GTA)
               </div>
             </div>
 
@@ -805,7 +827,7 @@ export default function App() {
                     <input 
                       type="number" 
                       className="input-balanced"
-                      placeholder="e.g. 64150"
+                      placeholder="e.g. 63950"
                       value={inputGoldPricePerBaht}
                       onChange={(e) => setInputGoldPricePerBaht(Number(e.target.value))}
                       required
