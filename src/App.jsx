@@ -125,17 +125,17 @@ export default function App() {
     }
   });
 
-  // Gold Spot Price per Baht Gold (1 Baht = 15.244g) - Prefers Buy Rate 63,950
+  // Gold Spot Price per Baht Gold (1 Baht = 15.244g) - GTA Buy Rate 64,000
   const [goldSpotPricePerBaht, setGoldSpotPricePerBaht] = useState(() => {
     try {
       const saved = localStorage.getItem('49habits_gold_spot');
-      return saved ? Number(saved) : 63950;
+      return saved ? Number(saved) : 64000;
     } catch (e) {
-      return 63950;
+      return 64000;
     }
   });
 
-  const [goldSellPricePerBaht, setGoldSellPricePerBaht] = useState(64150);
+  const [goldSellPricePerBaht, setGoldSellPricePerBaht] = useState(64200);
   const [isLiveLoading, setIsLiveLoading] = useState(false);
   const [lastSpotUpdatedTime, setLastSpotUpdatedTime] = useState('');
 
@@ -143,7 +143,7 @@ export default function App() {
   const [showGoldModal, setShowGoldModal] = useState(false);
   const [goldModalMode, setGoldModalMode] = useState('buy'); // 'buy' or 'redeem'
   const [inputGoldTHB, setInputGoldTHB] = useState('100');
-  const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(63950);
+  const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64000);
   const [inputRefId, setInputRefId] = useState('');
   const [inputRedeemBarSize, setInputRedeemBarSize] = useState('0.1');
 
@@ -162,7 +162,7 @@ export default function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Same-Origin Native API Gold Price Fetcher (Prefers GTA Buy Rate 63,950)
+  // Same-Origin Native API Gold Price Fetcher (GTA Buy Rate 64,000 / Sell Rate 64,200)
   const fetchLiveGoldPrice = async () => {
     setIsLiveLoading(true);
     console.log('[Gold API Client] Fetching live price from /api/gold-price...');
@@ -173,7 +173,7 @@ export default function App() {
         console.log('[Gold API Client] Received payload:', data);
         if (data) {
           const buyRate = Number(data.buyPricePerBaht || data.pricePerBaht);
-          const sellRate = Number(data.pricePerBaht || 64150);
+          const sellRate = Number(data.pricePerBaht || 64200);
 
           if (buyRate > 30000) {
             setGoldSpotPricePerBaht(buyRate);
@@ -190,7 +190,7 @@ export default function App() {
       console.error('[Gold API Client] Fetch error:', e);
     }
 
-    console.log('[Gold API Client] Using default GTA Buy Rate 63,950 THB/Baht');
+    console.log('[Gold API Client] Using default GTA Buy Rate 64,000 THB/Baht');
     const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     setLastSpotUpdatedTime(nowTime);
     setIsLiveLoading(false);
@@ -300,7 +300,7 @@ export default function App() {
 
   // Auto-calculated Buy Weight math
   const numTHB = Number(inputGoldTHB) || 0;
-  const numPricePerBaht = Number(inputGoldPricePerBaht) || 63950;
+  const numPricePerBaht = Number(inputGoldPricePerBaht) || 64000;
   const autoCalculatedGrams = numPricePerBaht > 0 ? (numTHB * 15.244) / numPricePerBaht : 0;
   const autoCalculatedBaht = autoCalculatedGrams / 15.244;
 
@@ -839,7 +839,7 @@ export default function App() {
                     <input 
                       type="number" 
                       className="input-balanced"
-                      placeholder="e.g. 63950"
+                      placeholder="e.g. 64000"
                       value={inputGoldPricePerBaht}
                       onChange={(e) => setInputGoldPricePerBaht(Number(e.target.value))}
                       required
