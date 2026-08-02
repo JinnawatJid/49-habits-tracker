@@ -550,7 +550,7 @@ export default function App() {
         {activeTab === 'today' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Single 7-Day Sprint Habit Challenge Card */}
-            <div className="hero-challenge-card animate-pop" style={{ margin: '12px 0' }}>
+            <div className="hero-challenge-card animate-pop">
               <div className="hero-card-header">
                 <span className="hero-subtitle-tag" style={{ color: '#10b981', fontWeight: 700 }}>
                   LEVEL {currentLevel} ACTIVE • 7 DAYS SPRINT
@@ -681,7 +681,7 @@ export default function App() {
           /* Tab 3: Gold DCA Portfolio Tracker */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-pop">
             {/* Portfolio Summary Hero Card */}
-            <div className="hero-challenge-card" style={{ margin: 0, padding: '22px' }}>
+            <div className="hero-challenge-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div>
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
