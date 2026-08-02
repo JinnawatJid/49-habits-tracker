@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
-  Coins, Plus, Trash2, TrendingUp, Sparkles, Scale, ArrowUpRight, ArrowDownRight, Package, RefreshCw, Pencil
+  Coins, Plus, Trash2, TrendingUp, Scale, ArrowUpRight, Package, RefreshCw, Pencil
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -67,7 +67,7 @@ const SEQUENTIAL_49_LEVELS = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('today');
-  const [todayISO] = useState(getTodayISO());
+  const todayISO = getTodayISO();
   const [syncKey, setSyncKey] = useState(getInitialSyncKey());
   const [showSyncModal, setShowSyncModal] = useState(!getInitialSyncKey());
   const [inputSyncKey, setInputSyncKey] = useState('');
@@ -183,7 +183,6 @@ export default function App() {
 
   const [isLiveLoading, setIsLiveLoading] = useState(false);
   const [lastSpotUpdatedTime, setLastSpotUpdatedTime] = useState('');
-  const [goldPriceSource, setGoldPriceSource] = useState('Automatic Global Market Feed (XAU/USD)');
 
   // Modal States
   const [showGoldModal, setShowGoldModal] = useState(false);
@@ -223,7 +222,6 @@ export default function App() {
       console.log('[Gold API Client] Using Manual GTA Override Rate:', manualBuyPrice, '| Sell:', manualSellPrice);
       setGoldSpotPricePerBaht(manualBuyPrice);
       setGoldSellPricePerBaht(manualSellPrice);
-      setGoldPriceSource('Custom Manual GTA Override');
       return;
     }
 
@@ -241,7 +239,6 @@ export default function App() {
           if (buyRate > 30000) {
             setGoldSpotPricePerBaht(buyRate);
             setGoldSellPricePerBaht(sellRate);
-            setGoldPriceSource(data.source || 'Automatic Global Market Feed (XAU/USD)');
             console.log('[Gold API Client] Updated Gold Spot Reference (Buy Rate) to:', buyRate, 'THB/Baht');
             setIsLiveLoading(false);
             return;
@@ -255,7 +252,6 @@ export default function App() {
     console.log('[Gold API Client] Using default GTA Buy Rate 64,000 THB/Baht');
     setGoldSpotPricePerBaht(64000);
     setGoldSellPricePerBaht(64200);
-    setGoldPriceSource('Official Thai Gold Traders Association (GTA)');
     setIsLiveLoading(false);
   };
 
