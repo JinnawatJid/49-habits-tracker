@@ -73,14 +73,20 @@
   gap: 20px;
 }
 
-/* Hero 21-Day Challenge Card */
+/* Hero 21-Day Challenge Card - Standardized Dimensions */
 .hero-challenge-card {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--surface-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
   padding: 22px;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
   transition: background-color 0.25s ease, border-color 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 280px;
 }
 
 .hero-card-header {
@@ -200,105 +206,58 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .btn-emerald-solid:hover {
   background: var(--accent-emerald-hover);
 }
 
-.card-balanced {
-  background: var(--surface-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-
-.input-balanced {
-  width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-  background: var(--surface-card);
-  color: var(--text-primary);
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.input-balanced:focus {
-  border-color: var(--accent-emerald);
-}
-
+/* Section Headings */
 .section-heading {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--text-primary);
   margin-bottom: 12px;
+  letter-spacing: -0.01em;
 }
 
+/* Balanced Card Standard */
+.card-balanced {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* Task & Journey Rows */
 .task-card-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
   background: var(--surface-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
-  margin-bottom: 10px;
-  transition: all 0.2s ease;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
+/* Tag Pills */
 .tag-pill {
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
-.tag-green { background: #e6f4ea; color: #137333; }
-[data-theme="dark"] .tag-green { background: #064e3b; color: #6ee7b7; }
-
-/* Centered Screen Modal Overlay */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 100;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.modal-content {
-  width: 100%;
-  max-width: 400px;
-  background: var(--surface-card);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-card);
-  animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+.tag-green {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
 }
 
 /* Bottom Nav Bar */
@@ -309,51 +268,89 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  height: 66px;
+  height: 64px;
   background: var(--nav-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--nav-border);
   display: flex;
-  align-items: center;
   justify-content: space-around;
-  z-index: 50;
-  transition: background-color 0.25s ease, border-color 0.25s ease;
+  align-items: center;
+  z-index: 100;
+  transition: background-color 0.25s ease;
 }
 
 .nav-tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 8px 24px;
+  transition: color 0.2s ease;
 }
 
 .nav-tab-btn.active {
-  color: var(--text-primary);
+  color: var(--accent-emerald);
+  font-weight: 700;
 }
 
 .nav-tab-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.nav-tab-btn.active .nav-tab-icon {
-  background: var(--text-primary);
-  color: var(--bg-app);
+/* Modal Overlay & Card */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
-.animate-pop {
-  animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.modal-content {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.input-balanced {
+  width: 100%;
+  height: 44px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 0 14px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.input-balanced:focus {
+  border-color: var(--accent-emerald);
 }
