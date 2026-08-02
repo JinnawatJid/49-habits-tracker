@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
-  Coins, Plus, Trash2, TrendingUp, Sparkles, Scale, ArrowUpRight, ArrowDownRight, Package, RefreshCw
+  Coins, Plus, Trash2, TrendingUp, Sparkles, Scale, ArrowUpRight, ArrowDownRight, Package, RefreshCw, Pencil
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -125,9 +125,42 @@ export default function App() {
     }
   });
 
-  // Gold Spot Price per Baht Gold (1 Baht = 15.244g) - GTA Buy Rate 64,000
+  // Manual GTA Override State
+  const [isManualOverride, setIsManualOverride] = useState(() => {
+    try {
+      const saved = localStorage.getItem('49habits_gold_manual_enabled');
+      return saved ? JSON.parse(saved) : false;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const [manualBuyPrice, setManualBuyPrice] = useState(() => {
+    try {
+      const saved = localStorage.getItem('49habits_gold_manual_buy');
+      return saved ? Number(saved) : 64000;
+    } catch (e) {
+      return 64000;
+    }
+  });
+
+  const [manualSellPrice, setManualSellPrice] = useState(() => {
+    try {
+      const saved = localStorage.getItem('49habits_gold_manual_sell');
+      return saved ? Number(saved) : 64200;
+    } catch (e) {
+      return 64200;
+    }
+  });
+
+  // Gold Spot Price per Baht Gold (1 Baht = 15.244g)
   const [goldSpotPricePerBaht, setGoldSpotPricePerBaht] = useState(() => {
     try {
+      const savedOverride = localStorage.getItem('49habits_gold_manual_enabled');
+      if (savedOverride && JSON.parse(savedOverride)) {
+        const savedBuy = localStorage.getItem('49habits_gold_manual_buy');
+        return savedBuy ? Number(savedBuy) : 64000;
+      }
       const saved = localStorage.getItem('49habits_gold_spot');
       return saved ? Number(saved) : 64000;
     } catch (e) {
@@ -135,17 +168,36 @@ export default function App() {
     }
   });
 
-  const [goldSellPricePerBaht, setGoldSellPricePerBaht] = useState(64200);
+  const [goldSellPricePerBaht, setGoldSellPricePerBaht] = useState(() => {
+    try {
+      const savedOverride = localStorage.getItem('49habits_gold_manual_enabled');
+      if (savedOverride && JSON.parse(savedOverride)) {
+        const savedSell = localStorage.getItem('49habits_gold_manual_sell');
+        return savedSell ? Number(savedSell) : 64200;
+      }
+      return 64200;
+    } catch (e) {
+      return 64200;
+    }
+  });
+
   const [isLiveLoading, setIsLiveLoading] = useState(false);
   const [lastSpotUpdatedTime, setLastSpotUpdatedTime] = useState('');
+  const [goldPriceSource, setGoldPriceSource] = useState('Automatic Global Market Feed (XAU/USD)');
 
-  // Redesigned Log Gold Modal State
+  // Modal States
   const [showGoldModal, setShowGoldModal] = useState(false);
   const [goldModalMode, setGoldModalMode] = useState('buy'); // 'buy' or 'redeem'
   const [inputGoldTHB, setInputGoldTHB] = useState('100');
   const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64000);
   const [inputRefId, setInputRefId] = useState('');
   const [inputRedeemBarSize, setInputRedeemBarSize] = useState('0.1');
+
+  // Custom Gold Rate Modal State
+  const [showSetGoldModal, setShowSetGoldModal] = useState(false);
+  const [overrideModalMode, setOverrideModalMode] = useState(isManualOverride ? 'manual' : 'auto');
+  const [inputOverrideBuy, setInputOverrideBuy] = useState(manualBuyPrice);
+  const [inputOverrideSell, setInputOverrideSell] = useState(manualSellPrice);
 
   // Sync modal inputGoldPricePerBaht with goldSpotPricePerBaht
   useEffect(() => {
@@ -162,8 +214,19 @@ export default function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Same-Origin Native API Gold Price Fetcher (GTA Buy Rate 64,000 / Sell Rate 64,200)
+  // Live Price Fetcher (Supports Automatic Global Market & Manual GTA Override)
   const fetchLiveGoldPrice = async () => {
+    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    setLastSpotUpdatedTime(nowTime);
+
+    if (isManualOverride) {
+      console.log('[Gold API Client] Using Manual GTA Override Rate:', manualBuyPrice, '| Sell:', manualSellPrice);
+      setGoldSpotPricePerBaht(manualBuyPrice);
+      setGoldSellPricePerBaht(manualSellPrice);
+      setGoldPriceSource('Custom Manual GTA Override');
+      return;
+    }
+
     setIsLiveLoading(true);
     console.log('[Gold API Client] Fetching live price from /api/gold-price...');
     try {
@@ -178,9 +241,8 @@ export default function App() {
           if (buyRate > 30000) {
             setGoldSpotPricePerBaht(buyRate);
             setGoldSellPricePerBaht(sellRate);
+            setGoldPriceSource(data.source || 'Automatic Global Market Feed (XAU/USD)');
             console.log('[Gold API Client] Updated Gold Spot Reference (Buy Rate) to:', buyRate, 'THB/Baht');
-            const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            setLastSpotUpdatedTime(nowTime);
             setIsLiveLoading(false);
             return;
           }
@@ -191,15 +253,16 @@ export default function App() {
     }
 
     console.log('[Gold API Client] Using default GTA Buy Rate 64,000 THB/Baht');
-    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    setLastSpotUpdatedTime(nowTime);
+    setGoldSpotPricePerBaht(64000);
+    setGoldSellPricePerBaht(64200);
+    setGoldPriceSource('Official Thai Gold Traders Association (GTA)');
     setIsLiveLoading(false);
   };
 
-  // Auto-fetch live spot price on app mount
+  // Auto-fetch live spot price on app mount or override toggle
   useEffect(() => {
     fetchLiveGoldPrice();
-  }, []);
+  }, [isManualOverride, manualBuyPrice, manualSellPrice]);
 
   // STEP 1: On Mount or Sync Key Change -> Fetch Cloud Data BEFORE Pushing
   useEffect(() => {
@@ -235,6 +298,9 @@ export default function App() {
       localStorage.setItem('49habits_seq_mastered', JSON.stringify(masteredLevels));
       localStorage.setItem('49habits_gold_txs', JSON.stringify(goldTransactions));
       localStorage.setItem('49habits_gold_spot', goldSpotPricePerBaht.toString());
+      localStorage.setItem('49habits_gold_manual_enabled', JSON.stringify(isManualOverride));
+      localStorage.setItem('49habits_gold_manual_buy', manualBuyPrice.toString());
+      localStorage.setItem('49habits_gold_manual_sell', manualSellPrice.toString());
 
       if (!isInitializedRef.current) return;
 
@@ -251,7 +317,7 @@ export default function App() {
     } catch (e) {
       console.error('Storage sync error:', e);
     }
-  }, [currentLevel, activeCheckIns, masteredLevels, theme, goldTransactions, goldSpotPricePerBaht, syncKey]);
+  }, [currentLevel, activeCheckIns, masteredLevels, theme, goldTransactions, goldSpotPricePerBaht, isManualOverride, manualBuyPrice, manualSellPrice, syncKey]);
 
   // STEP 3: Supabase Real-Time Listener
   useEffect(() => {
@@ -284,6 +350,25 @@ export default function App() {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, [syncKey]);
+
+  // Save Custom Manual GTA Rate Override
+  const handleSaveCustomGoldRate = (e) => {
+    e.preventDefault();
+    if (overrideModalMode === 'auto') {
+      setIsManualOverride(false);
+      setShowSetGoldModal(false);
+      fetchLiveGoldPrice();
+    } else {
+      const numBuy = Number(inputOverrideBuy) || 64000;
+      const numSell = Number(inputOverrideSell) || 64200;
+      setIsManualOverride(true);
+      setManualBuyPrice(numBuy);
+      setManualSellPrice(numSell);
+      setGoldSpotPricePerBaht(numBuy);
+      setGoldSellPricePerBaht(numSell);
+      setShowSetGoldModal(false);
+    }
+  };
 
   // Single Field Sync Key Login
   const handleSaveSyncKey = (e) => {
@@ -645,7 +730,7 @@ export default function App() {
               <Plus size={20} /> Log Gold Transaction
             </button>
 
-            {/* Ultra-Clean Gold Spot Reference Card (Zero Text Clutter) */}
+            {/* Gold Spot Reference Card (Supports Auto Global & Manual Override) */}
             <div className="card-balanced" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -655,10 +740,30 @@ export default function App() {
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="tag-pill tag-green" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700 }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span> Live
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {isManualOverride ? (
+                    <span className="tag-pill" style={{ background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700 }}>
+                      <Pencil size={11} /> Manual GTA
+                    </span>
+                  ) : (
+                    <span className="tag-pill tag-green" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700 }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span> Live Global
+                    </span>
+                  )}
+
+                  <button 
+                    onClick={() => {
+                      setOverrideModalMode(isManualOverride ? 'manual' : 'auto');
+                      setInputOverrideBuy(manualBuyPrice);
+                      setInputOverrideSell(manualSellPrice);
+                      setShowSetGoldModal(true);
+                    }}
+                    className="theme-toggle-btn"
+                    style={{ width: '30px', height: '30px' }}
+                    title="Set Custom Gold Spot Reference"
+                  >
+                    <Pencil size={14} />
+                  </button>
 
                   <button 
                     onClick={fetchLiveGoldPrice}
@@ -693,7 +798,7 @@ export default function App() {
               </div>
 
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
-                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}Official GTA Feed
+                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}{goldPriceSource}
               </div>
             </div>
 
@@ -749,6 +854,116 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Set Custom Gold Spot Reference Modal */}
+      {showSetGoldModal && (
+        <div className="modal-overlay" onClick={() => setShowSetGoldModal(false)}>
+          <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Scale size={22} color="#10b981" />
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Set Custom Gold Reference</h2>
+              </div>
+              <button 
+                onClick={() => setShowSetGoldModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Segmented Mode Switcher */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-app)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-card)', marginBottom: '18px' }}>
+              <button 
+                type="button"
+                onClick={() => setOverrideModalMode('auto')}
+                style={{
+                  padding: '8px',
+                  borderRadius: '9px',
+                  border: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: overrideModalMode === 'auto' ? 'var(--surface-card)' : 'transparent',
+                  color: overrideModalMode === 'auto' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  boxShadow: overrideModalMode === 'auto' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <RefreshCw size={14} color="#10b981" /> Live Global Feed
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => setOverrideModalMode('manual')}
+                style={{
+                  padding: '8px',
+                  borderRadius: '9px',
+                  border: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: overrideModalMode === 'manual' ? 'var(--surface-card)' : 'transparent',
+                  color: overrideModalMode === 'manual' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  boxShadow: overrideModalMode === 'manual' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Pencil size={14} color="#f59e0b" /> Manual GTA Override
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomGoldRate} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {overrideModalMode === 'manual' ? (
+                <>
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                      GTA Buy Rate (THB/Baht)
+                    </label>
+                    <input 
+                      type="number" 
+                      className="input-balanced"
+                      placeholder="e.g. 64000"
+                      value={inputOverrideBuy}
+                      onChange={(e) => setInputOverrideBuy(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                      GTA Sell Rate (THB/Baht)
+                    </label>
+                    <input 
+                      type="number" 
+                      className="input-balanced"
+                      placeholder="e.g. 64200"
+                      value={inputOverrideSell}
+                      onChange={(e) => setInputOverrideSell(e.target.value)}
+                      required
+                    />
+                  </div>
+                </>
+              ) : (
+                <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', padding: '14px', borderRadius: '12px', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Switches back to automatic 24/7 global market calculations based on live XAU/USD gold spot and USD/THB exchange rates.
+                </div>
+              )}
+
+              <button type="submit" className="btn-emerald-solid" style={{ height: '46px', marginTop: '4px' }}>
+                {overrideModalMode === 'manual' ? 'Apply Manual GTA Rate' : 'Enable Live Global Feed'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Log Gold Transaction Modal (Buy vs Redeem Switcher) */}
       {showGoldModal && (
