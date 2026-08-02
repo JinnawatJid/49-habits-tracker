@@ -730,7 +730,7 @@ export default function App() {
               <Plus size={20} /> Log Gold Transaction
             </button>
 
-            {/* Gold Spot Reference Card (Supports Auto Global & Manual Override) */}
+            {/* Ultra-Clean Single Pill Gold Spot Reference Card */}
             <div className="card-balanced" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -740,39 +740,57 @@ export default function App() {
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div>
                   {isManualOverride ? (
-                    <span className="tag-pill" style={{ background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700 }}>
+                    <button 
+                      onClick={() => {
+                        setOverrideModalMode('manual');
+                        setInputOverrideBuy(manualBuyPrice);
+                        setInputOverrideSell(manualSellPrice);
+                        setShowSetGoldModal(true);
+                      }}
+                      className="tag-pill" 
+                      style={{ 
+                        background: '#fef3c7', 
+                        color: '#b45309', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px', 
+                        padding: '4px 10px', 
+                        fontSize: '0.72rem', 
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                      title="Click to edit custom GTA rates or switch to Live Global"
+                    >
                       <Pencil size={11} /> Manual GTA
-                    </span>
+                    </button>
                   ) : (
-                    <span className="tag-pill tag-green" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700 }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span> Live Global
-                    </span>
+                    <button 
+                      onClick={() => {
+                        setOverrideModalMode('auto');
+                        setInputOverrideBuy(manualBuyPrice);
+                        setInputOverrideSell(manualSellPrice);
+                        setShowSetGoldModal(true);
+                      }}
+                      className="tag-pill tag-green" 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px', 
+                        padding: '4px 10px', 
+                        fontSize: '0.72rem', 
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                      title="Click to configure gold rate settings or refresh"
+                    >
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                      Live Global <RefreshCw size={11} className={isLiveLoading ? 'spin-icon' : ''} />
+                    </button>
                   )}
-
-                  <button 
-                    onClick={() => {
-                      setOverrideModalMode(isManualOverride ? 'manual' : 'auto');
-                      setInputOverrideBuy(manualBuyPrice);
-                      setInputOverrideSell(manualSellPrice);
-                      setShowSetGoldModal(true);
-                    }}
-                    className="theme-toggle-btn"
-                    style={{ width: '30px', height: '30px' }}
-                    title="Set Custom Gold Spot Reference"
-                  >
-                    <Pencil size={14} />
-                  </button>
-
-                  <button 
-                    onClick={fetchLiveGoldPrice}
-                    className="theme-toggle-btn"
-                    style={{ width: '30px', height: '30px' }}
-                    title="Refresh Live Gold Price"
-                  >
-                    <RefreshCw size={14} className={isLiveLoading ? 'spin-icon' : ''} />
-                  </button>
                 </div>
               </div>
 
@@ -798,7 +816,7 @@ export default function App() {
               </div>
 
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
-                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}{goldPriceSource}
+                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}{isManualOverride ? 'Manual GTA Rate' : 'Global Feed'}
               </div>
             </div>
 
