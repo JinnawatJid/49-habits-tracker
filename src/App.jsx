@@ -460,7 +460,9 @@ export default function App() {
   // COMBINED TOTAL GOLD ASSET WEIGHT (Digital Pool + Physical Vault)
   const totalAssetWeightGrams = Math.max(0, digitalPoolGrams) + physicalVaultGrams;
 
+  // Average Cost per Gram & Average Cost per Baht of Gold (1 Baht = 15.244g)
   const avgCostPerGram = totalAssetWeightGrams > 0 ? (totalSpentTHB / Math.max(totalAssetWeightGrams, 0.0001)) : 0;
+  const avgCostPerBaht = avgCostPerGram * 15.244;
 
   // Real Market Portfolio Valuation (Digital + Physical Vault combined)
   const currentMarketValueTHB = totalAssetWeightGrams * (goldSpotPricePerBaht / 15.244);
@@ -715,7 +717,7 @@ export default function App() {
                 <div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Average Cost</div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
-                    {avgCostPerGram.toLocaleString('en-US', { maximumFractionDigits: 0 })} THB/g
+                    {avgCostPerBaht.toLocaleString('en-US', { maximumFractionDigits: 0 })} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>THB/Baht</span>
                   </div>
                 </div>
               </div>
