@@ -8,12 +8,13 @@
   position: relative;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
   padding-bottom: 80px;
+  margin: 0 auto;
   transition: background-color 0.25s ease;
 }
 
 /* Polished Header */
 .app-header {
-  padding: 24px 20px 16px;
+  padding: 24px 16px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -65,9 +66,11 @@
   to { transform: rotate(360deg); }
 }
 
-/* Main Content Padding */
+/* Main Content Padding - Maximized Card Width */
 .main-content {
-  padding: 0 20px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -80,7 +83,7 @@
   background: var(--surface-card);
   border: 1px solid var(--border-card);
   border-radius: 24px;
-  padding: 24px 26px;
+  padding: 22px 24px;
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04);
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
