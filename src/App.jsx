@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
-  Coins, Plus, Trash2, TrendingUp, Scale, ArrowUpRight, Package, RefreshCw, Pencil
+  Coins, Plus, Trash2, TrendingUp, TrendingDown, Scale, ArrowUpRight, Package, RefreshCw, Pencil
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -402,6 +402,7 @@ export default function App() {
     } else {
       // Redeem Mode
       const redeemGrams = Number(inputRedeemBarSize) || 0.1;
+      const calculatedBarCost = redeemGrams * (avgCostPerGram || (64000 / 15.244));
 
       const newTx = {
         id: 'gt-' + Date.now(),
@@ -410,6 +411,8 @@ export default function App() {
         amountTHB: 0,
         weightGrams: -redeemGrams,
         barSize: redeemGrams,
+        costBasisTHB: calculatedBarCost,
+        avgCostPerBahtAtRedeem: avgCostPerBaht || 64000,
         refId: inputRefId.trim(),
         isPhysicalBar: true
       };
@@ -823,42 +826,93 @@ export default function App() {
                     No gold transactions logged yet. Click "+ Log Gold Transaction" above to start tracking
                   </div>
                 ) : (
-                  safeGoldTxs.map(tx => (
-                    <div key={tx.id} className="task-card-row">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ 
-                          width: '36px', height: '36px', borderRadius: '50%', 
-                          background: tx.type === 'redeem' ? '#fef3c7' : 'var(--bg-app)', 
-                          border: '1px solid var(--border-card)', 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
-                        }}>
-                          {tx.type === 'redeem' ? <Package size={18} color="#f59e0b" /> : <Coins size={18} color="#10b981" />}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {tx.type === 'redeem' ? (
-                              <>
-                                Redeemed {Math.abs(tx.weightGrams || 0.1)}g Bar
-                                <span className="tag-pill" style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.68rem', padding: '2px 6px' }}>Vault Transfer</span>
-                              </>
-                            ) : (
-                              `${Number(tx.amountTHB).toLocaleString()} THB → +${Number(tx.weightGrams).toFixed(4)} g Gold`
-                            )}
-                          </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                            {tx.date} {tx.refId && `• Ref: ${tx.refId}`}
-                          </div>
-                        </div>
-                      </div>
+                  safeGoldTxs.map(tx => {
+                    const isRedeem = tx.type === 'redeem';
+                    const redeemGrams = isRedeem ? Math.abs(Number(tx.weightGrams) || Number(tx.barSize) || 0.1) : 0;
+                    const barCostBasis = isRedeem ? (Number(tx.costBasisTHB) || (redeemGrams * (tx.avgCostPerBahtAtRedeem ? tx.avgCostPerBahtAtRedeem / 15.244 : (avgCostPerGram || 4200)))) : 0;
+                    const currentSpotBarVal = isRedeem ? redeemGrams * (goldSpotPricePerBaht / 15.244) : 0;
+                    const barPnlTHB = currentSpotBarVal - barCostBasis;
+                    const barPnlPercent = barCostBasis > 0 ? (barPnlTHB / barCostBasis) * 100 : 0;
 
-                      <button 
-                        onClick={() => handleDeleteGoldTx(tx.id)}
-                        style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', marginLeft: '8px' }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))
+                    return (
+                      <div key={tx.id} className="task-card-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ 
+                              width: '36px', height: '36px', borderRadius: '50%', 
+                              background: isRedeem ? '#fef3c7' : 'var(--bg-app)', 
+                              border: '1px solid var(--border-card)', 
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
+                            }}>
+                              {isRedeem ? <Package size={18} color="#f59e0b" /> : <Coins size={18} color="#10b981" />}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                {isRedeem ? (
+                                  <>
+                                    96.5% Mint Gold {redeemGrams}g Bar
+                                    <span className="tag-pill" style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.68rem', padding: '2px 6px' }}>Vault Physical</span>
+                                  </>
+                                ) : (
+                                  `${Number(tx.amountTHB).toLocaleString()} THB → +${Number(tx.weightGrams).toFixed(4)} g Gold`
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                {tx.date} {tx.refId && `• Booking No: ${tx.refId}`}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button 
+                            onClick={() => handleDeleteGoldTx(tx.id)}
+                            style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', marginLeft: '8px' }}
+                            title="Delete Transaction"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+
+                        {isRedeem && (
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between', 
+                            background: 'var(--bg-app)', 
+                            padding: '8px 12px', 
+                            borderRadius: '8px', 
+                            border: '1px solid var(--border-card)',
+                            fontSize: '0.76rem',
+                            flexWrap: 'wrap',
+                            gap: '6px'
+                          }}>
+                            <div>
+                              <span style={{ color: 'var(--text-muted)' }}>Cost Rate: </span>
+                              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {tx.avgCostPerBahtAtRedeem ? Math.round(tx.avgCostPerBahtAtRedeem).toLocaleString() : Math.round(avgCostPerBaht).toLocaleString()} THB/Baht
+                              </span>
+                              <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>({Math.round(barCostBasis).toLocaleString()} THB)</span>
+                            </div>
+
+                            <div 
+                              className="tag-pill"
+                              style={{ 
+                                background: barPnlTHB >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)', 
+                                color: barPnlTHB >= 0 ? '#10b981' : '#ef4444',
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '3px',
+                                fontWeight: 700,
+                                padding: '3px 8px'
+                              }}
+                            >
+                              {barPnlTHB >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                              {barPnlTHB >= 0 ? '+' : ''}{Math.round(barPnlTHB).toLocaleString()} THB ({barPnlPercent >= 0 ? '+' : ''}{barPnlPercent.toFixed(1)}%)
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
