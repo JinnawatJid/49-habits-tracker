@@ -741,30 +741,30 @@ export default function App() {
               </div>
             </div>
 
-            {/* 2. Dedicated Physical Gold Vault Inventory Card */}
+            {/* 2. Dedicated Ultra-Clean Physical Gold Vault Inventory Card (v2) */}
             {vaultBarCount > 0 && (
-              <div className="card-balanced" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div className="card-balanced" style={{ padding: '18px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ShieldCheck size={20} color="#f59e0b" />
-                    <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                      Physical Gold Vault
+                    <ShieldCheck size={18} color="#f59e0b" />
+                    <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Physical Vault
                     </span>
                   </div>
 
-                  <span className="tag-pill tag-green" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700 }}>
-                    <Package size={12} /> Safe Inventory
+                  <span className="tag-pill" style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 700 }}>
+                    {vaultBarCount} {vaultBarCount === 1 ? 'Bar' : 'Bars'} • {vaultTotalWeightGrams.toFixed(4)} g
                   </span>
                 </div>
 
-                {/* Hero Vault Valuation & PnL */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
+                {/* Hero Vault Valuation & PnL (Clean 2-Column Metric Grid) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'baseline', marginBottom: '14px' }}>
                   <div>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      VAULT MARKET VALUE
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {Math.round(vaultCurrentMarketValTHB).toLocaleString()} <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>THB</span>
                     </div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
-                      {Math.round(vaultCurrentMarketValTHB).toLocaleString()} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>THB</span>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em' }}>
+                      VAULT VALUE
                     </div>
                   </div>
 
@@ -776,60 +776,43 @@ export default function App() {
                       display: 'flex', 
                       alignItems: 'center', 
                       gap: '4px',
-                      padding: '6px 12px',
-                      fontSize: '0.82rem',
+                      padding: '5px 10px',
+                      fontSize: '0.78rem',
                       fontWeight: 700
                     }}
                   >
-                    {vaultPnlTHB >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    {vaultPnlTHB >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                     {vaultPnlTHB >= 0 ? '+' : ''}{Math.round(vaultPnlTHB).toLocaleString()} THB ({vaultPnlPercent >= 0 ? '+' : ''}{vaultPnlPercent.toFixed(1)}%)
                   </div>
                 </div>
 
-                {/* Key Metrics Grid (3 Columns) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', paddingTop: '14px', borderTop: '1px solid var(--border-card)', marginBottom: '14px' }}>
-                  <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Bar Count</div>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
-                      {vaultBarCount} {vaultBarCount === 1 ? 'Bar' : 'Bars'}
-                    </div>
+                {/* Single Line Footer: Cost & Inventory Breakdown Chips */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid var(--border-card)', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    Cost: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{Math.round(vaultCostBasisTHB).toLocaleString()} THB</span>
                   </div>
 
-                  <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vault Weight</div>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
-                      {vaultTotalWeightGrams.toFixed(4)} g
-                    </div>
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                    {Object.entries(vaultBarBreakdown).map(([size, count]) => (
+                      <span 
+                        key={size}
+                        className="tag-pill"
+                        style={{ 
+                          background: 'var(--bg-app)', 
+                          border: '1px solid var(--border-card)', 
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                      >
+                        <Coins size={10} color="#f59e0b" /> {count}x {size}g
+                      </span>
+                    ))}
                   </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vault Cost</div>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
-                      {Math.round(vaultCostBasisTHB).toLocaleString()} THB
-                    </div>
-                  </div>
-                </div>
-
-                {/* Inventory Bar Breakdown Chips */}
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {Object.entries(vaultBarBreakdown).map(([size, count]) => (
-                    <span 
-                      key={size}
-                      className="tag-pill"
-                      style={{ 
-                        background: 'var(--bg-app)', 
-                        border: '1px solid var(--border-card)', 
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      <Coins size={11} color="#f59e0b" /> {count}x {size}g Bar
-                    </span>
-                  ))}
                 </div>
               </div>
             )}
