@@ -773,45 +773,25 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div 
-                      className="tag-pill"
-                      style={{ 
-                        background: vaultPnlTHB >= 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.12)', 
-                        color: vaultPnlTHB >= 0 ? '#f59e0b' : '#ef4444',
-                        border: vaultPnlTHB >= 0 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px',
-                        padding: '6px 12px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700
-                      }}
-                    >
-                      {vaultPnlTHB >= 0 ? <TrendingUp size={14} color="#f59e0b" /> : <TrendingDown size={14} color="#ef4444" />}
-                      {vaultPnlTHB >= 0 ? '+' : ''}{Math.round(vaultPnlTHB).toLocaleString()} THB ({vaultPnlPercent >= 0 ? '+' : ''}{vaultPnlPercent.toFixed(1)}%)
-                    </div>
-
-                    <button 
-                      onClick={() => setShowVaultDetailsModal(true)}
-                      className="tag-pill"
-                      style={{
-                        background: 'rgba(245, 158, 11, 0.18)',
-                        color: '#f59e0b',
-                        border: '1px solid rgba(245, 158, 11, 0.4)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '6px 10px',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                      title="View detailed breakdown for all physical gold bars in your vault"
-                    >
-                      View Bars <ArrowUpRight size={13} color="#f59e0b" />
-                    </button>
-                  </div>
+                  <button 
+                    onClick={() => setShowVaultDetailsModal(true)}
+                    className="tag-pill"
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.18)',
+                      color: '#f59e0b',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 12px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                    title="View detailed breakdown for all physical gold bars in your vault"
+                  >
+                    View Bars <ArrowUpRight size={14} color="#f59e0b" />
+                  </button>
                 </div>
 
                 {/* Key Metrics Grid (Clean 2 Columns - Vault Inventory Removed) */}
