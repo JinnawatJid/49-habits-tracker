@@ -1368,13 +1368,15 @@ export default function App() {
               </button>
             </div>
 
-            {/* Top Vault Summary Banner */}
-            <div style={{ background: 'var(--bg-app)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '14px', borderRadius: '14px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+            {/* Reorganized Top Vault Summary Banner */}
+            <div style={{ background: 'var(--bg-app)', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '16px', borderRadius: '16px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                 <div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.04em' }}>TOTAL VAULT VALUE</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {Math.round(vaultCurrentMarketValTHB).toLocaleString()} <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>THB</span>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    TOTAL VAULT VALUE
+                  </div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                    {Math.round(vaultCurrentMarketValTHB).toLocaleString()} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>THB</span>
                   </div>
                 </div>
 
@@ -1387,32 +1389,45 @@ export default function App() {
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '4px',
-                    padding: '5px 10px',
-                    fontSize: '0.78rem',
+                    padding: '6px 12px',
+                    fontSize: '0.82rem',
                     fontWeight: 700
                   }}
                 >
-                  {vaultPnlTHB >= 0 ? <TrendingUp size={12} color="#f59e0b" /> : <TrendingDown size={12} color="#ef4444" />}
+                  {vaultPnlTHB >= 0 ? <TrendingUp size={14} color="#f59e0b" /> : <TrendingDown size={14} color="#ef4444" />}
                   {vaultPnlTHB >= 0 ? '+' : ''}{Math.round(vaultPnlTHB).toLocaleString()} THB ({vaultPnlPercent >= 0 ? '+' : ''}{vaultPnlPercent.toFixed(1)}%)
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--border-card)', fontSize: '0.76rem' }}>
+              {/* 3-Column Metrics Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--border-card)' }}>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Vault Cost: </span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{Math.round(vaultCostBasisTHB).toLocaleString()} THB</strong>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vault Cost</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                    {Math.round(vaultCostBasisTHB).toLocaleString()} THB
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Total Weight: </span>
-                  <strong style={{ color: '#f59e0b' }}>{vaultTotalWeightGrams.toFixed(4)} g</strong> ({vaultBarCount} {vaultBarCount === 1 ? 'Bar' : 'Bars'})
+
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Weight</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
+                    {vaultTotalWeightGrams.toFixed(4)} g
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Bars</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                    {vaultBarCount} {vaultBarCount === 1 ? 'Bar' : 'Bars'}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Individual Physical Bar Cards List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '320px', overflowY: 'auto', paddingRight: '2px' }}>
+            {/* Individual Physical Bar Cards List (Structured 3 Sections) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '350px', overflowY: 'auto', paddingRight: '2px' }}>
               {redeemedTxs.length === 0 ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center', padding: '20px' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '24px' }}>
                   No physical gold bars in vault safe yet.
                 </div>
               ) : (
@@ -1423,30 +1438,15 @@ export default function App() {
                   const barPnlTHB = currentSpotBarVal - barCostBasis;
                   const barPnlPercent = barCostBasis > 0 ? (barPnlTHB / barCostBasis) * 100 : 0;
                   const itemTitle = tx.itemTitle || `96.5% Mint Gold ${redeemGrams}g Bar`;
+                  const costRateBaht = tx.avgCostPerBahtAtRedeem ? Math.round(tx.avgCostPerBahtAtRedeem) : Math.round(avgCostPerBaht);
 
                   return (
-                    <div key={tx.id} style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', padding: '12px 14px', borderRadius: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <div key={tx.id} style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', padding: '14px', borderRadius: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {/* Section 1: Title & PnL Badge */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Package size={16} color="#f59e0b" />
-                          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{itemTitle}</span>
-                        </div>
-                        <span className="tag-pill" style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.68rem', padding: '2px 6px' }}>Physical Bar</span>
-                      </div>
-
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                        {tx.date} {tx.refId && `• Booking No: ${tx.refId}`}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.76rem', paddingTop: '8px', borderTop: '1px solid var(--border-card)', gap: '6px', flexWrap: 'wrap' }}>
-                        <div>
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>Cost ({tx.avgCostPerBahtAtRedeem ? Math.round(tx.avgCostPerBahtAtRedeem).toLocaleString() : Math.round(avgCostPerBaht).toLocaleString()} THB/Baht)</div>
-                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(barCostBasis).toLocaleString()} THB</div>
-                        </div>
-
-                        <div>
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>Current Spot Value</div>
-                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(currentSpotBarVal).toLocaleString()} THB</div>
+                          <Package size={18} color="#f59e0b" />
+                          <span style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)' }}>{itemTitle}</span>
                         </div>
 
                         <div 
@@ -1458,12 +1458,34 @@ export default function App() {
                             alignItems: 'center', 
                             gap: '3px',
                             fontWeight: 700,
-                            padding: '3px 8px',
-                            fontSize: '0.72rem'
+                            padding: '4px 10px',
+                            fontSize: '0.78rem'
                           }}
                         >
-                          {barPnlTHB >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                          {barPnlTHB >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                           {barPnlTHB >= 0 ? '+' : ''}{Math.round(barPnlTHB).toLocaleString()} THB ({barPnlPercent >= 0 ? '+' : ''}{barPnlPercent.toFixed(1)}%)
+                        </div>
+                      </div>
+
+                      {/* Section 2: Ref Strip */}
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--surface-card)', padding: '4px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                        {tx.date} {tx.refId && `• Booking No: ${tx.refId}`}
+                      </div>
+
+                      {/* Section 3: Cost Basis vs Current Value Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-card)' }}>
+                        <div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>COST BASIS</div>
+                          <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                            {Math.round(barCostBasis).toLocaleString()} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>({costRateBaht.toLocaleString()} THB/Baht)</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>CURRENT VALUE</div>
+                          <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                            {Math.round(currentSpotBarVal).toLocaleString()} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>({Math.round(goldSpotPricePerBaht).toLocaleString()} THB/Baht)</span>
+                          </div>
                         </div>
                       </div>
                     </div>
