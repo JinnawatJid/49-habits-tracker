@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Award, Compass, CheckCircle2, Lock, KeyRound, X, Moon, Sun,
-  Coins, Plus, Trash2, TrendingUp, TrendingDown, Scale, ArrowUpRight, Package, RefreshCw, Pencil
+  Coins, Plus, Trash2, TrendingUp, TrendingDown, Scale, ArrowUpRight, Package, RefreshCw, Pencil, ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchSupabaseData, pushSupabaseData, subscribeSupabaseRealtime } from './syncEngine';
@@ -463,6 +463,30 @@ export default function App() {
   const netProfitTHB = currentMarketValueTHB - totalSpentTHB;
   const netProfitPercent = totalSpentTHB > 0 ? ((netProfitTHB / totalSpentTHB) * 100) : 0;
 
+  // Physical Gold Vault Metrics (Redeemed physical bars in safe)
+  const redeemedTxs = safeGoldTxs.filter(tx => tx.type === 'redeem');
+  const vaultBarCount = redeemedTxs.length;
+
+  const vaultTotalWeightGrams = redeemedTxs.reduce((sum, tx) => {
+    return sum + Math.abs(Number(tx.weightGrams) || Number(tx.barSize) || 0.1);
+  }, 0);
+
+  const vaultCostBasisTHB = redeemedTxs.reduce((sum, tx) => {
+    const redeemGrams = Math.abs(Number(tx.weightGrams) || Number(tx.barSize) || 0.1);
+    const cost = Number(tx.costBasisTHB) || (redeemGrams * (tx.avgCostPerBahtAtRedeem ? tx.avgCostPerBahtAtRedeem / 15.244 : avgCostPerGram));
+    return sum + cost;
+  }, 0);
+
+  const vaultCurrentMarketValTHB = vaultTotalWeightGrams * (goldSpotPricePerBaht / 15.244);
+  const vaultPnlTHB = vaultCurrentMarketValTHB - vaultCostBasisTHB;
+  const vaultPnlPercent = vaultCostBasisTHB > 0 ? ((vaultPnlTHB / vaultCostBasisTHB) * 100) : 0;
+
+  const vaultBarBreakdown = redeemedTxs.reduce((acc, tx) => {
+    const sizeKey = (Math.abs(Number(tx.weightGrams) || Number(tx.barSize) || 0.1)).toString();
+    acc[sizeKey] = (acc[sizeKey] || 0) + 1;
+    return acc;
+  }, {});
+
   // Active level data & 7-Day Sprint math
   const activeLevelData = SEQUENTIAL_49_LEVELS.find(l => l.level === currentLevel) || SEQUENTIAL_49_LEVELS[0];
   const targetDays = activeLevelData.targetDays || 7;
@@ -815,6 +839,99 @@ export default function App() {
                 {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}{isManualOverride ? 'Manual GTA Rate' : 'Global Feed'}
               </div>
             </div>
+
+            {/* Dedicated Physical Gold Vault Inventory Card */}
+            {vaultBarCount > 0 && (
+              <div className="card-balanced" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShieldCheck size={20} color="#f59e0b" />
+                    <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Physical Gold Vault
+                    </span>
+                  </div>
+
+                  <span className="tag-pill tag-green" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700 }}>
+                    <Package size={12} /> Safe Inventory
+                  </span>
+                </div>
+
+                {/* Hero Vault Valuation & PnL */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      VAULT MARKET VALUE
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                      {Math.round(vaultCurrentMarketValTHB).toLocaleString()} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>THB</span>
+                    </div>
+                  </div>
+
+                  <div 
+                    className="tag-pill"
+                    style={{ 
+                      background: vaultPnlTHB >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)', 
+                      color: vaultPnlTHB >= 0 ? '#10b981' : '#ef4444',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px',
+                      padding: '6px 12px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700
+                    }}
+                  >
+                    {vaultPnlTHB >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    {vaultPnlTHB >= 0 ? '+' : ''}{Math.round(vaultPnlTHB).toLocaleString()} THB ({vaultPnlPercent >= 0 ? '+' : ''}{vaultPnlPercent.toFixed(1)}%)
+                  </div>
+                </div>
+
+                {/* Key Metrics Grid (3 Columns) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', paddingTop: '14px', borderTop: '1px solid var(--border-card)', marginBottom: '14px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Bar Count</div>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                      {vaultBarCount} {vaultBarCount === 1 ? 'Bar' : 'Bars'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vault Weight</div>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
+                      {vaultTotalWeightGrams.toFixed(4)} g
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vault Cost</div>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                      {Math.round(vaultCostBasisTHB).toLocaleString()} THB
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inventory Bar Breakdown Chips */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {Object.entries(vaultBarBreakdown).map(([size, count]) => (
+                    <span 
+                      key={size}
+                      className="tag-pill"
+                      style={{ 
+                        background: 'var(--bg-app)', 
+                        border: '1px solid var(--border-card)', 
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Coins size={11} color="#f59e0b" /> {count}x {size}g Bar
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Recent Purchases & Redemptions List */}
             <div>
