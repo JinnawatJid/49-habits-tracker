@@ -741,13 +741,19 @@ export default function App() {
               </div>
             </div>
 
-            {/* 2. Dedicated Physical Gold Vault Hero Card (Matching PORTFOLIO VALUE Pattern 100%) */}
+            {/* 2. Dedicated Physical Gold Vault Hero Card (Visually Distinct Safe Theme) */}
             {vaultBarCount > 0 && (
-              <div className="hero-challenge-card">
+              <div 
+                className="hero-challenge-card" 
+                style={{ 
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  background: 'linear-gradient(145deg, var(--surface-card) 0%, rgba(245, 158, 11, 0.05) 100%)'
+                }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      PHYSICAL VAULT VALUE
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ShieldCheck size={16} color="#f59e0b" /> PHYSICAL VAULT VALUE
                     </div>
                     <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
                       {Math.round(vaultCurrentMarketValTHB).toLocaleString()} <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-secondary)' }}>THB</span>
@@ -772,8 +778,8 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Key Metrics Grid (Clean 3 Columns - Matching PORTFOLIO VALUE Pattern) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', paddingTop: '16px', borderTop: '1px solid var(--border-card)' }}>
+                {/* Key Metrics Grid (Clean 2 Columns - Vault Inventory Removed) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '16px', borderTop: '1px solid rgba(245, 158, 11, 0.2)' }}>
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vault Cost</div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
@@ -783,15 +789,8 @@ export default function App() {
 
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vault Gold Asset</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-emerald)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
                       {vaultTotalWeightGrams.toFixed(4)} g
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vault Inventory</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {Object.entries(vaultBarBreakdown).map(([size, count]) => `${count}x ${size}g`).join(' • ') || `${vaultBarCount} Bars`}
                     </div>
                   </div>
                 </div>
