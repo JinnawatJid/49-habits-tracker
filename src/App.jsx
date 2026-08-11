@@ -181,6 +181,7 @@ export default function App() {
 
   // Modal States
   const [showGoldModal, setShowGoldModal] = useState(false);
+  const [showVaultDetailsModal, setShowVaultDetailsModal] = useState(false);
   const [goldModalMode, setGoldModalMode] = useState('buy'); // 'buy' or 'redeem'
   const [inputGoldTHB, setInputGoldTHB] = useState('100');
   const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64000);
@@ -772,22 +773,44 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div 
-                    className="tag-pill"
-                    style={{ 
-                      background: vaultPnlTHB >= 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.12)', 
-                      color: vaultPnlTHB >= 0 ? '#f59e0b' : '#ef4444',
-                      border: vaultPnlTHB >= 0 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '4px',
-                      padding: '6px 12px',
-                      fontSize: '0.85rem',
-                      fontWeight: 700
-                    }}
-                  >
-                    {vaultPnlTHB >= 0 ? <TrendingUp size={14} color="#f59e0b" /> : <TrendingDown size={14} color="#ef4444" />}
-                    {vaultPnlTHB >= 0 ? '+' : ''}{Math.round(vaultPnlTHB).toLocaleString()} THB ({vaultPnlPercent >= 0 ? '+' : ''}{vaultPnlPercent.toFixed(1)}%)
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div 
+                      className="tag-pill"
+                      style={{ 
+                        background: vaultPnlTHB >= 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.12)', 
+                        color: vaultPnlTHB >= 0 ? '#f59e0b' : '#ef4444',
+                        border: vaultPnlTHB >= 0 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px',
+                        padding: '6px 12px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700
+                      }}
+                    >
+                      {vaultPnlTHB >= 0 ? <TrendingUp size={14} color="#f59e0b" /> : <TrendingDown size={14} color="#ef4444" />}
+                      {vaultPnlTHB >= 0 ? '+' : ''}{Math.round(vaultPnlTHB).toLocaleString()} THB ({vaultPnlPercent >= 0 ? '+' : ''}{vaultPnlPercent.toFixed(1)}%)
+                    </div>
+
+                    <button 
+                      onClick={() => setShowVaultDetailsModal(true)}
+                      className="tag-pill"
+                      style={{
+                        background: 'rgba(245, 158, 11, 0.18)',
+                        color: '#f59e0b',
+                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '6px 10px',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      title="View detailed breakdown for all physical gold bars in your vault"
+                    >
+                      View Bars <ArrowUpRight size={13} color="#f59e0b" />
+                    </button>
                   </div>
                 </div>
 
@@ -1338,6 +1361,136 @@ export default function App() {
                 {goldModalMode === 'buy' ? 'Save Buy Transaction' : 'Save Redeem Transaction'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Physical Vault Detailed Inventory Modal */}
+      {showVaultDetailsModal && (
+        <div className="modal-overlay" onClick={() => setShowVaultDetailsModal(false)}>
+          <div className="card-balanced modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck size={22} color="#f59e0b" />
+                <div>
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Physical Vault Inventory</h2>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Detailed value & cost breakdown for each physical bar in safe
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowVaultDetailsModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Top Vault Summary Banner */}
+            <div style={{ background: 'var(--bg-app)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '14px', borderRadius: '14px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.04em' }}>TOTAL VAULT VALUE</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {Math.round(vaultCurrentMarketValTHB).toLocaleString()} <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>THB</span>
+                  </div>
+                </div>
+
+                <div 
+                  className="tag-pill"
+                  style={{ 
+                    background: vaultPnlTHB >= 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.12)', 
+                    color: vaultPnlTHB >= 0 ? '#f59e0b' : '#ef4444',
+                    border: vaultPnlTHB >= 0 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '4px',
+                    padding: '5px 10px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700
+                  }}
+                >
+                  {vaultPnlTHB >= 0 ? <TrendingUp size={12} color="#f59e0b" /> : <TrendingDown size={12} color="#ef4444" />}
+                  {vaultPnlTHB >= 0 ? '+' : ''}{Math.round(vaultPnlTHB).toLocaleString()} THB ({vaultPnlPercent >= 0 ? '+' : ''}{vaultPnlPercent.toFixed(1)}%)
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--border-card)', fontSize: '0.76rem' }}>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Vault Cost: </span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{Math.round(vaultCostBasisTHB).toLocaleString()} THB</strong>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Total Weight: </span>
+                  <strong style={{ color: '#f59e0b' }}>{vaultTotalWeightGrams.toFixed(4)} g</strong> ({vaultBarCount} {vaultBarCount === 1 ? 'Bar' : 'Bars'})
+                </div>
+              </div>
+            </div>
+
+            {/* Individual Physical Bar Cards List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '320px', overflowY: 'auto', paddingRight: '2px' }}>
+              {redeemedTxs.length === 0 ? (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center', padding: '20px' }}>
+                  No physical gold bars in vault safe yet.
+                </div>
+              ) : (
+                redeemedTxs.map(tx => {
+                  const redeemGrams = Math.abs(Number(tx.weightGrams) || Number(tx.barSize) || 0.1);
+                  const barCostBasis = Number(tx.costBasisTHB) || (redeemGrams * (tx.avgCostPerBahtAtRedeem ? tx.avgCostPerBahtAtRedeem / 15.244 : avgCostPerGram));
+                  const currentSpotBarVal = redeemGrams * (goldSpotPricePerBaht / 15.244);
+                  const barPnlTHB = currentSpotBarVal - barCostBasis;
+                  const barPnlPercent = barCostBasis > 0 ? (barPnlTHB / barCostBasis) * 100 : 0;
+                  const itemTitle = tx.itemTitle || `96.5% Mint Gold ${redeemGrams}g Bar`;
+
+                  return (
+                    <div key={tx.id} style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', padding: '12px 14px', borderRadius: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Package size={16} color="#f59e0b" />
+                          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{itemTitle}</span>
+                        </div>
+                        <span className="tag-pill" style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.68rem', padding: '2px 6px' }}>Physical Bar</span>
+                      </div>
+
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                        {tx.date} {tx.refId && `• Booking No: ${tx.refId}`}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.76rem', paddingTop: '8px', borderTop: '1px solid var(--border-card)', gap: '6px', flexWrap: 'wrap' }}>
+                        <div>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>Cost ({tx.avgCostPerBahtAtRedeem ? Math.round(tx.avgCostPerBahtAtRedeem).toLocaleString() : Math.round(avgCostPerBaht).toLocaleString()} THB/Baht)</div>
+                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(barCostBasis).toLocaleString()} THB</div>
+                        </div>
+
+                        <div>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>Current Spot Value</div>
+                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(currentSpotBarVal).toLocaleString()} THB</div>
+                        </div>
+
+                        <div 
+                          className="tag-pill"
+                          style={{ 
+                            background: barPnlTHB >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)', 
+                            color: barPnlTHB >= 0 ? '#10b981' : '#ef4444',
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '3px',
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            fontSize: '0.72rem'
+                          }}
+                        >
+                          {barPnlTHB >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                          {barPnlTHB >= 0 ? '+' : ''}{Math.round(barPnlTHB).toLocaleString()} THB ({barPnlPercent >= 0 ? '+' : ''}{barPnlPercent.toFixed(1)}%)
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       )}
