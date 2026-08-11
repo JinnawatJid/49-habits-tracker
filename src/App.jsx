@@ -698,7 +698,7 @@ export default function App() {
         ) : (
           /* Tab 3: Gold DCA Portfolio Tracker */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-pop">
-            {/* Portfolio Summary Hero Card */}
+            {/* 1. Portfolio Summary Hero Card (PORTFOLIO VALUE) */}
             <div className="hero-challenge-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div>
@@ -741,106 +741,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Log Buy / Redeem Button */}
-            <button 
-              className="btn-emerald-solid"
-              onClick={() => setShowGoldModal(true)}
-              style={{ height: '48px', fontSize: '0.98rem' }}
-            >
-              <Plus size={20} /> Log Gold Transaction
-            </button>
-
-            {/* Ultra-Clean Single Pill Gold Spot Reference Card */}
-            <div className="card-balanced" style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Coins size={18} color="#10b981" />
-                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Gold Spot Reference
-                  </span>
-                </div>
-
-                <div>
-                  {isManualOverride ? (
-                    <button 
-                      onClick={() => {
-                        setOverrideModalMode('manual');
-                        setInputOverrideBuy(manualBuyPrice);
-                        setInputOverrideSell(manualSellPrice);
-                        setShowSetGoldModal(true);
-                      }}
-                      className="tag-pill" 
-                      style={{ 
-                        background: '#fef3c7', 
-                        color: '#b45309', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '5px', 
-                        padding: '4px 10px', 
-                        fontSize: '0.72rem', 
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                      title="Click to edit custom GTA rates or switch to Live Global"
-                    >
-                      <Pencil size={11} /> Manual GTA
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => {
-                        setOverrideModalMode('auto');
-                        setInputOverrideBuy(manualBuyPrice);
-                        setInputOverrideSell(manualSellPrice);
-                        setShowSetGoldModal(true);
-                      }}
-                      className="tag-pill tag-green" 
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '5px', 
-                        padding: '4px 10px', 
-                        fontSize: '0.72rem', 
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                      title="Click to configure gold rate settings or refresh"
-                    >
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-                      Live Global <RefreshCw size={11} className={isLiveLoading ? 'spin-icon' : ''} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Clean 2-Column Metric Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'baseline' }}>
-                <div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>THB</span>
-                  </div>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981', marginTop: '2px', letterSpacing: '0.04em' }}>
-                    BUY RATE
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                    {goldSellPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>THB</span>
-                  </div>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em' }}>
-                    SELL RATE
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
-                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}{isManualOverride ? 'Manual GTA Rate' : 'Global Feed'}
-              </div>
-            </div>
-
-            {/* Dedicated Physical Gold Vault Inventory Card */}
+            {/* 2. Dedicated Physical Gold Vault Inventory Card */}
             {vaultBarCount > 0 && (
               <div className="card-balanced" style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -932,6 +833,105 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* 3. Ultra-Clean Single Pill Gold Spot Reference Card */}
+            <div className="card-balanced" style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Coins size={18} color="#10b981" />
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Gold Spot Reference
+                  </span>
+                </div>
+
+                <div>
+                  {isManualOverride ? (
+                    <button 
+                      onClick={() => {
+                        setOverrideModalMode('manual');
+                        setInputOverrideBuy(manualBuyPrice);
+                        setInputOverrideSell(manualSellPrice);
+                        setShowSetGoldModal(true);
+                      }}
+                      className="tag-pill" 
+                      style={{ 
+                        background: '#fef3c7', 
+                        color: '#b45309', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px', 
+                        padding: '4px 10px', 
+                        fontSize: '0.72rem', 
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                      title="Click to edit custom GTA rates or switch to Live Global"
+                    >
+                      <Pencil size={11} /> Manual GTA
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        setOverrideModalMode('auto');
+                        setInputOverrideBuy(manualBuyPrice);
+                        setInputOverrideSell(manualSellPrice);
+                        setShowSetGoldModal(true);
+                      }}
+                      className="tag-pill tag-green" 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px', 
+                        padding: '4px 10px', 
+                        fontSize: '0.72rem', 
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                      title="Click to configure gold rate settings or refresh"
+                    >
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                      Live Global <RefreshCw size={11} className={isLiveLoading ? 'spin-icon' : ''} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Clean 2-Column Metric Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'baseline' }}>
+                <div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {goldSpotPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>THB</span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981', marginTop: '2px', letterSpacing: '0.04em' }}>
+                    BUY RATE
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    {goldSellPricePerBaht.toLocaleString()} <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>THB</span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em' }}>
+                    SELL RATE
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
+                {lastSpotUpdatedTime ? `Updated ${lastSpotUpdatedTime} • ` : ''}{isManualOverride ? 'Manual GTA Rate' : 'Global Feed'}
+              </div>
+            </div>
+
+            {/* 4. Log Buy / Redeem Button */}
+            <button 
+              className="btn-emerald-solid"
+              onClick={() => setShowGoldModal(true)}
+              style={{ height: '48px', fontSize: '0.98rem' }}
+            >
+              <Plus size={20} /> Log Gold Transaction
+            </button>
 
             {/* Recent Purchases & Redemptions List */}
             <div>
