@@ -185,7 +185,11 @@ export default function App() {
   const [inputGoldTHB, setInputGoldTHB] = useState('100');
   const [inputGoldPricePerBaht, setInputGoldPricePerBaht] = useState(64000);
   const [inputRefId, setInputRefId] = useState('');
-  const [inputRedeemBarSize, setInputRedeemBarSize] = useState('0.1');
+  const [inputRedeemBarSize, setInputRedeemBarSize] = useState('0.2');
+  const [inputRedeemItemTitle, setInputRedeemItemTitle] = useState('96.5% Mint Gold 0.2g Bar');
+  const [inputRedeemWeightPerUnit, setInputRedeemWeightPerUnit] = useState('0.2');
+  const [inputRedeemQuantity, setInputRedeemQuantity] = useState('1');
+  const [inputRedeemAvgCostPerBaht, setInputRedeemAvgCostPerBaht] = useState('');
 
   // Custom Gold Rate Modal State
   const [showSetGoldModal, setShowSetGoldModal] = useState(false);
@@ -400,19 +404,27 @@ export default function App() {
 
       setGoldTransactions([newTx, ...goldTransactions]);
     } else {
-      // Redeem Mode
-      const redeemGrams = Number(inputRedeemBarSize) || 0.1;
-      const calculatedBarCost = redeemGrams * (avgCostPerGram || (64000 / 15.244));
+      // Flexible Redeem Mode
+      const weightPerUnit = Number(inputRedeemWeightPerUnit) || 0.2;
+      const quantity = Math.max(1, Number(inputRedeemQuantity) || 1);
+      const totalRedeemGrams = weightPerUnit * quantity;
+      const customAvgCostPerBaht = Number(inputRedeemAvgCostPerBaht) || avgCostPerBaht || 64000;
+      const calculatedBarCost = totalRedeemGrams * (customAvgCostPerBaht / 15.244);
+
+      const defaultTitle = `96.5% Mint Gold ${weightPerUnit}g Bar`;
+      const finalTitle = inputRedeemItemTitle.trim() ? inputRedeemItemTitle.trim() : defaultTitle;
 
       const newTx = {
         id: 'gt-' + Date.now(),
         type: 'redeem',
         date: getTodayISO(),
         amountTHB: 0,
-        weightGrams: -redeemGrams,
-        barSize: redeemGrams,
+        weightGrams: -totalRedeemGrams,
+        barSize: weightPerUnit,
+        quantity: quantity,
+        itemTitle: finalTitle,
         costBasisTHB: calculatedBarCost,
-        avgCostPerBahtAtRedeem: avgCostPerBaht || 64000,
+        avgCostPerBahtAtRedeem: customAvgCostPerBaht,
         refId: inputRefId.trim(),
         isPhysicalBar: true
       };
@@ -931,7 +943,7 @@ export default function App() {
                               <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                 {isRedeem ? (
                                   <>
-                                    96.5% Mint Gold {redeemGrams}g Bar
+                                    {tx.itemTitle || `96.5% Mint Gold ${redeemGrams}g Bar`}
                                     <span className="tag-pill" style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.68rem', padding: '2px 6px' }}>Vault Physical</span>
                                   </>
                                 ) : (
@@ -1218,27 +1230,92 @@ export default function App() {
                   </div>
                 </>
               ) : (
-                /* Redeem Mode */
+                /* Flexible Redeem Mode */
                 <>
                   <div>
                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
-                      Physical Bar Size to Redeem
+                      Redeem Item Title
                     </label>
-                    <select 
+                    <input 
+                      type="text" 
                       className="input-balanced"
-                      value={inputRedeemBarSize}
-                      onChange={(e) => setInputRedeemBarSize(e.target.value)}
-                    >
-                      <option value="0.1">0.1g Physical Bar</option>
-                      <option value="0.5">0.5g Physical Bar</option>
-                      <option value="1.0">1.0g Physical Bar</option>
-                      <option value="15.244">1.0 Baht Gold Bar (15.244g)</option>
-                    </select>
+                      placeholder="e.g. 9650 Mint Gold 0.2 Gram"
+                      value={inputRedeemItemTitle}
+                      onChange={(e) => setInputRedeemItemTitle(e.target.value)}
+                      required
+                    />
                   </div>
 
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                        Weight per Unit (g)
+                      </label>
+                      <input 
+                        type="number" 
+                        step="0.0001"
+                        className="input-balanced"
+                        placeholder="e.g. 0.2"
+                        value={inputRedeemWeightPerUnit}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setInputRedeemWeightPerUnit(val);
+                          setInputRedeemItemTitle(`9650 Mint Gold ${val || 0.2} Gram`);
+                        }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                        Amount (Quantity)
+                      </label>
+                      <input 
+                        type="number" 
+                        min="1"
+                        className="input-balanced"
+                        placeholder="e.g. 1"
+                        value={inputRedeemQuantity}
+                        onChange={(e) => setInputRedeemQuantity(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                      Average Price Per Baht (THB/Baht)
+                    </label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      className="input-balanced"
+                      placeholder={avgCostPerBaht ? avgCostPerBaht.toFixed(2) : '65744.03'}
+                      value={inputRedeemAvgCostPerBaht || (avgCostPerBaht ? avgCostPerBaht.toFixed(2) : '64000')}
+                      onChange={(e) => setInputRedeemAvgCostPerBaht(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {/* Live Summary Highlight Box */}
                   <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-card)', padding: '12px 14px', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                      Redeeming deducts <strong>-{inputRedeemBarSize}g</strong> from your digital gold pool and adds <strong>+1 Physical Bar</strong> to your physical vault inventory!
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      REDEMPTION SUMMARY (LIVE CALCULATED)
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total Weight Delivered</div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f59e0b' }}>
+                          -{(Number(inputRedeemWeightPerUnit || 0.2) * Math.max(1, Number(inputRedeemQuantity || 1))).toFixed(4)} g
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Bar Cost Basis</div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          {Math.round((Number(inputRedeemWeightPerUnit || 0.2) * Math.max(1, Number(inputRedeemQuantity || 1))) * ((Number(inputRedeemAvgCostPerBaht) || avgCostPerBaht || 64000) / 15.244)).toLocaleString()} THB
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -1246,12 +1323,12 @@ export default function App() {
 
               <div>
                 <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
-                  Reference ID (Optional)
+                  Booking No. / Ref ID (Optional)
                 </label>
                 <input 
                   type="text" 
                   className="input-balanced"
-                  placeholder="e.g. MGB0000S260730656202"
+                  placeholder="e.g. 260808R362422"
                   value={inputRefId}
                   onChange={(e) => setInputRefId(e.target.value)}
                 />
