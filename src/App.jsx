@@ -51,10 +51,17 @@ const SEQUENTIAL_49_LEVELS = [
     targetDays: 7,
     isDefined: true
   },
-  ...Array.from({ length: 46 }, (_, i) => ({
-    level: i + 4,
-    title: `Locked Habit (Chapter ${i + 4})`,
-    description: `Unlock by completing Level ${i + 3} (7 Days Sprint)`,
+  {
+    level: 4,
+    title: 'ขยับร่างกาย',
+    description: 'ออกกำลังกายแบบแอโรบิก หรือเคลื่อนไหวร่างกาย เพื่อสุขภาพที่ดีของร่างกายและจิตใจ',
+    targetDays: 7,
+    isDefined: true
+  },
+  ...Array.from({ length: 45 }, (_, i) => ({
+    level: i + 5,
+    title: `Locked Habit (Chapter ${i + 5})`,
+    description: `Unlock by completing Level ${i + 4} (7 Days Sprint)`,
     targetDays: 7,
     isDefined: false
   }))
