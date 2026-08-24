@@ -54,7 +54,7 @@ const SEQUENTIAL_49_LEVELS = [
   {
     level: 4,
     title: 'ขยับร่างกาย',
-    description: 'ออกกำลังกายแบบแอโรบิก หรือเคลื่อนไหวร่างกาย เพื่อสุขภาพที่ดีของร่างกายและจิตใจ',
+    description: 'วิ่งออกกำลังกายตอนเช้า วันละ 30 นาที วันเว้นวัน',
     targetDays: 7,
     isDefined: true
   },
