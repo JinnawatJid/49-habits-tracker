@@ -23,7 +23,8 @@ A gamified daily habits and wealth tracking web application based on the book *4
 - **Level 2**: `ล้างหน้าปั๊บขยับ 1 นาที` (*"วิดพื้นเพื่อสร้างความกระปรี้กระเปร่า"*).
 - **Level 3**: `อยากสมองดีให้อยู่เฉยๆ` (*"อยู่เฉยๆ 15 นาที เพื่อให้สมองได้พักผ่อนอย่างแท้จริง"*).
 - **Level 4**: `ขยับร่างกาย` (*"วิ่งออกกำลังกายตอนเช้า วันละ 30 นาที วันเว้นวัน"*).
-- **Levels 5 to 49**: Pre-allocated sequential roadmap slots (`Locked Habit (Chapter X)` 🔒). Unlocks level-by-level upon completing 7/7 days of the preceding level.
+- **Level 5**: `จอดำบ้างก็ได้` (*"ลดช่วงเวลา screentime ให้เหลือไม่เกิน 6 ชั่วโมง"*).
+- **Levels 6 to 49**: Pre-allocated sequential roadmap slots (`Locked Habit (Chapter X)` 🔒). Unlocks level-by-level upon completing 7/7 days of the preceding level.
 
 ---
 
