@@ -24,7 +24,7 @@ A gamified daily habits and wealth tracking web application based on the book *4
 - **Level 3**: `อยากสมองดีให้อยู่เฉยๆ` (*"อยู่เฉยๆ 15 นาที เพื่อให้สมองได้พักผ่อนอย่างแท้จริง"*).
 - **Level 4**: `ขยับร่างกาย` (*"วิ่งออกกำลังกายตอนเช้า วันละ 30 นาที วันเว้นวัน"*).
 - **Level 5**: `จอดำบ้างก็ได้` (*"ลดช่วงเวลา screentime ให้เหลือไม่เกิน 6 ชั่วโมง"*).
-- **Level 6**: `PERFECT MEAL วันละครั้ง` (*"ภายใน 1 วัน เราควรมี Perfect Meal 1 มื้อ"*).
+- **Level 6**: `แค่ 300cc ชีวิตโคตรดี` (*"ดื่มน้ำเปล่าอย่างน้อย 300cc ทันทีหลังตื่นนอน"*).
 - **Levels 7 to 49**: Pre-allocated sequential roadmap slots (`Locked Habit (Chapter X)` 🔒). Unlocks level-by-level upon completing 7/7 days of the preceding level.
 
 ---

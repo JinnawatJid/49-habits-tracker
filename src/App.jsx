@@ -67,8 +67,8 @@ const SEQUENTIAL_49_LEVELS = [
   },
   {
     level: 6,
-    title: 'PERFECT MEAL วันละครั้ง',
-    description: 'ภายใน 1 วัน เราควรมี Perfect Meal 1 มื้อ',
+    title: 'แค่ 300cc ชีวิตโคตรดี',
+    description: 'ดื่มน้ำเปล่าอย่างน้อย 300cc ทันทีหลังตื่นนอน',
     targetDays: 7,
     isDefined: true
   },
