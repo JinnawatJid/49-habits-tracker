@@ -72,10 +72,17 @@ const SEQUENTIAL_49_LEVELS = [
     targetDays: 7,
     isDefined: true
   },
-  ...Array.from({ length: 43 }, (_, i) => ({
-    level: i + 7,
-    title: `Locked Habit (Chapter ${i + 7})`,
-    description: `Unlock by completing Level ${i + 6} (7 Days Sprint)`,
+  {
+    level: 7,
+    title: 'No more snack!',
+    description: 'งดอาหารว่างระหว่างวัน',
+    targetDays: 7,
+    isDefined: true
+  },
+  ...Array.from({ length: 42 }, (_, i) => ({
+    level: i + 8,
+    title: `Locked Habit (Chapter ${i + 8})`,
+    description: `Unlock by completing Level ${i + 7} (7 Days Sprint)`,
     targetDays: 7,
     isDefined: false
   }))

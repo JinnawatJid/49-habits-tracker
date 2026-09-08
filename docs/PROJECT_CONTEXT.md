@@ -25,7 +25,8 @@ A gamified daily habits and wealth tracking web application based on the book *4
 - **Level 4**: `ขยับร่างกาย` (*"วิ่งออกกำลังกายตอนเช้า วันละ 30 นาที วันเว้นวัน"*).
 - **Level 5**: `จอดำบ้างก็ได้` (*"ลดช่วงเวลา screentime ให้เหลือไม่เกิน 6 ชั่วโมง"*).
 - **Level 6**: `แค่ 300cc ชีวิตโคตรดี` (*"ดื่มน้ำเปล่าอย่างน้อย 300cc ทันทีหลังตื่นนอน"*).
-- **Levels 7 to 49**: Pre-allocated sequential roadmap slots (`Locked Habit (Chapter X)` 🔒). Unlocks level-by-level upon completing 7/7 days of the preceding level.
+- **Level 7**: `No more snack!` (*"งดอาหารว่างระหว่างวัน"*).
+- **Levels 8 to 49**: Pre-allocated sequential roadmap slots (`Locked Habit (Chapter X)` 🔒). Unlocks level-by-level upon completing 7/7 days of the preceding level.
 
 ---
 
